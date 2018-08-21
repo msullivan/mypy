@@ -108,6 +108,10 @@ def main(script_path: Optional[str], args: Optional[List[str]] = None) -> None:
         print_memory_profile()
     del res  # Now it's safe to delete
 
+    import getattr_hook, pickle  # type: ignore
+    with open('lol.pickle', 'wb') as f:
+        pickle.dump(getattr_hook.stuff, f)
+
     code = 0
     if messages:
         code = 2 if blockers else 1
