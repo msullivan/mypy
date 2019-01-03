@@ -18,14 +18,13 @@ from mypy import state
 from mypy.nodes import (
     INVARIANT, SymbolNode, ARG_POS, ARG_OPT, ARG_STAR, ARG_STAR2, ARG_NAMED, ARG_NAMED_OPT,
     FuncDef,
+    pack, Unpacker, JsonDict,
 )
 from mypy.sharedparse import argument_elide_name
 from mypy.util import IdMapper, replace_object_state
 from mypy.bogus_type import Bogus
 
 T = TypeVar('T')
-
-JsonDict = Dict[str, Any]
 
 # The set of all valid expressions that can currently be contained
 # inside of a Literal[...].
@@ -92,7 +91,8 @@ class TypeOfAny:
 def deserialize_type(data: Union[JsonDict, str]) -> 'Type':
     if isinstance(data, str):
         return Instance.deserialize(data)
-    classname = data['.class']
+
+    classname = data[0]
     method = deserialize_map.get(classname)
     if method is not None:
         return method(data)
@@ -226,24 +226,28 @@ class TypeVarDef(mypy.nodes.Context):
 
     def serialize(self) -> JsonDict:
         assert not self.id.is_meta_var()
-        return {'.class': 'TypeVarDef',
-                'name': self.name,
-                'fullname': self.fullname,
-                'id': self.id.raw_id,
-                'values': [v.serialize() for v in self.values],
-                'upper_bound': self.upper_bound.serialize(),
-                'variance': self.variance,
-                }
+        return pack([
+            'TypeVarDef',
+            self.name,
+            self.fullname,
+            self.id.raw_id,
+            [v.serialize() for v in self.values],
+            self.upper_bound.serialize(),
+            self.variance,
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'TypeVarDef':
-        assert data['.class'] == 'TypeVarDef'
-        return TypeVarDef(data['name'],
-                          data['fullname'],
-                          data['id'],
-                          [deserialize_type(v) for v in data['values']],
-                          deserialize_type(data['upper_bound']),
-                          data['variance'],
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'TypeVarDef'
+
+        return TypeVarDef(stream.read(),
+                          stream.read(),
+                          stream.read(),
+                          [deserialize_type(v) for v in stream.read()],
+                          deserialize_type(stream.read()),
+                          stream.read(),
                           )
 
 
@@ -303,20 +307,24 @@ class UnboundType(Type):
                 self.original_str_fallback == other.original_str_fallback)
 
     def serialize(self) -> JsonDict:
-        return {'.class': 'UnboundType',
-                'name': self.name,
-                'args': [a.serialize() for a in self.args],
-                'expr': self.original_str_expr,
-                'expr_fallback': self.original_str_fallback,
-                }
+        return pack([
+            'UnboundType',
+            self.name,
+            [a.serialize() for a in self.args],
+            self.original_str_expr,
+            self.original_str_fallback,
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'UnboundType':
-        assert data['.class'] == 'UnboundType'
-        return UnboundType(data['name'],
-                           [deserialize_type(a) for a in data['args']],
-                           original_str_expr=data['expr'],
-                           original_str_fallback=data['expr_fallback'],
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'UnboundType'
+
+        return UnboundType(stream.read(),
+                           [deserialize_type(a) for a in stream.read()],
+                           original_str_expr=stream.read(),
+                           original_str_fallback=stream.read(),
                            )
 
 
@@ -429,17 +437,25 @@ class AnyType(Type):
         return isinstance(other, AnyType)
 
     def serialize(self) -> JsonDict:
-        return {'.class': 'AnyType', 'type_of_any': self.type_of_any,
-                'source_any': self.source_any.serialize() if self.source_any is not None else None,
-                'missing_import_name': self.missing_import_name}
+        return pack([
+            'AnyType',
+            self.type_of_any,
+            self.source_any.serialize() if self.source_any is not None else None,
+            self.missing_import_name
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'AnyType':
-        assert data['.class'] == 'AnyType'
-        source = data['source_any']
-        return AnyType(data['type_of_any'],
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'AnyType'
+
+        type_of_any = stream.read()
+        source = stream.read()
+        missing_import_name = stream.read()
+        return AnyType(type_of_any,
                        AnyType.deserialize(source) if source is not None else None,
-                       data['missing_import_name'])
+                       missing_import_name)
 
 
 class UninhabitedType(Type):
@@ -482,13 +498,18 @@ class UninhabitedType(Type):
         return isinstance(other, UninhabitedType)
 
     def serialize(self) -> JsonDict:
-        return {'.class': 'UninhabitedType',
-                'is_noreturn': self.is_noreturn}
+        return pack([
+            'UninhabitedType',
+            self.is_noreturn
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'UninhabitedType':
-        assert data['.class'] == 'UninhabitedType'
-        return UninhabitedType(is_noreturn=data['is_noreturn'])
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'UninhabitedType'
+
+        return UninhabitedType(is_noreturn=stream.read())
 
 
 class NoneTyp(Type):
@@ -515,11 +536,14 @@ class NoneTyp(Type):
         return visitor.visit_none_type(self)
 
     def serialize(self) -> JsonDict:
-        return {'.class': 'NoneTyp'}
+        return pack(['NoneTyp'])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'NoneTyp':
-        assert data['.class'] == 'NoneTyp'
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'NoneTyp'
+
         return NoneTyp()
 
 
@@ -550,13 +574,18 @@ class DeletedType(Type):
         return visitor.visit_deleted_type(self)
 
     def serialize(self) -> JsonDict:
-        return {'.class': 'DeletedType',
-                'source': self.source}
+        return pack([
+            'DeletedType',
+            self.source,
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'DeletedType':
-        assert data['.class'] == 'DeletedType'
-        return DeletedType(data['source'])
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'DeletedType'
+
+        return DeletedType(stream.read())
 
 
 # Fake TypeInfo to be used as a placeholder during Instance de-serialization.
@@ -632,15 +661,19 @@ class Instance(Type):
     def serialize(self) -> Union[JsonDict, str]:
         assert self.type is not None
         type_ref = self.type.fullname()
+        # Special case for instances without arguments: just serialize a string
         if not self.args and not self.final_value:
             return type_ref
-        data = {'.class': 'Instance',
-                }  # type: JsonDict
-        data['type_ref'] = type_ref
-        data['args'] = [arg.serialize() for arg in self.args]
-        if self.final_value is not None:
-            data['final_value'] = self.final_value.serialize()
-        return data
+
+        data = [
+            'Instance',
+            type_ref,
+            [arg.serialize() for arg in self.args],
+        ]  # type: List[Any]
+        # XXX: instances are very common and final values are rare so this might be worth
+        # microoptimizing?
+        data += [self.final_value.serialize() if self.final_value else None]
+        return pack(data)
 
     @classmethod
     def deserialize(cls, data: Union[JsonDict, str]) -> 'Instance':
@@ -648,16 +681,24 @@ class Instance(Type):
             inst = Instance(NOT_READY, [])
             inst.type_ref = data
             return inst
-        assert data['.class'] == 'Instance'
+
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'Instance'
+
+        type_ref = stream.read()
+
         args = []  # type: List[Type]
-        if 'args' in data:
-            args_list = data['args']
-            assert isinstance(args_list, list)
-            args = [deserialize_type(arg) for arg in args_list]
+        args_list = stream.read()
+        assert isinstance(args_list, list)
+        args = [deserialize_type(arg) for arg in args_list]
+
         inst = Instance(NOT_READY, args)
-        inst.type_ref = data['type_ref']  # Will be fixed up by fixup.py later.
-        if 'final_value' in data:
-            inst.final_value = LiteralType.deserialize(data['final_value'])
+        inst.type_ref = type_ref  # Will be fixed up by fixup.py later.
+
+        final_value = stream.read()
+        if final_value:
+            inst.final_value = LiteralType.deserialize(final_value)
         return inst
 
     def copy_modified(self, *,
@@ -716,24 +757,28 @@ class TypeVarType(Type):
 
     def serialize(self) -> JsonDict:
         assert not self.id.is_meta_var()
-        return {'.class': 'TypeVarType',
-                'name': self.name,
-                'fullname': self.fullname,
-                'id': self.id.raw_id,
-                'values': [v.serialize() for v in self.values],
-                'upper_bound': self.upper_bound.serialize(),
-                'variance': self.variance,
-                }
+        return pack([
+            'TypeVarType',
+            self.name,
+            self.fullname,
+            self.id.raw_id,
+            [v.serialize() for v in self.values],
+            self.upper_bound.serialize(),
+            self.variance,
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'TypeVarType':
-        assert data['.class'] == 'TypeVarType'
-        tvdef = TypeVarDef(data['name'],
-                           data['fullname'],
-                           data['id'],
-                           [deserialize_type(v) for v in data['values']],
-                           deserialize_type(data['upper_bound']),
-                           data['variance'])
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'TypeVarType'
+
+        tvdef = TypeVarDef(stream.read(),
+                           stream.read(),
+                           stream.read(),
+                           [deserialize_type(v) for v in stream.read()],
+                           deserialize_type(stream.read()),
+                           stream.read())
         return TypeVarType(tvdef)
 
 
@@ -1071,38 +1116,41 @@ class CallableType(FunctionLike):
     def serialize(self) -> JsonDict:
         # TODO: As an optimization, leave out everything related to
         # generic functions for non-generic functions.
-        return {'.class': 'CallableType',
-                'arg_types': [t.serialize() for t in self.arg_types],
-                'arg_kinds': self.arg_kinds,
-                'arg_names': self.arg_names,
-                'ret_type': self.ret_type.serialize(),
-                'fallback': self.fallback.serialize(),
-                'name': self.name,
-                # We don't serialize the definition (only used for error messages).
-                'variables': [v.serialize() for v in self.variables],
-                'is_ellipsis_args': self.is_ellipsis_args,
-                'implicit': self.implicit,
-                'bound_args': [(None if t is None else t.serialize())
-                               for t in self.bound_args],
-                'def_extras': dict(self.def_extras),
-                }
+        return pack([
+            'CallableType',
+            [t.serialize() for t in self.arg_types],
+            self.arg_kinds,
+            self.arg_names,
+            self.ret_type.serialize(),
+            self.fallback.serialize(),
+            self.name,
+            # We don't serialize the definition (only used for error messages).
+            [v.serialize() for v in self.variables],
+            self.is_ellipsis_args,
+            self.implicit,
+            [(None if t is None else t.serialize()) for t in self.bound_args],
+            dict(self.def_extras),
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'CallableType':
-        assert data['.class'] == 'CallableType'
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'CallableType'
+
         # TODO: Set definition to the containing SymbolNode?
-        return CallableType([deserialize_type(t) for t in data['arg_types']],
-                            data['arg_kinds'],
-                            data['arg_names'],
-                            deserialize_type(data['ret_type']),
-                            Instance.deserialize(data['fallback']),
-                            name=data['name'],
-                            variables=[TypeVarDef.deserialize(v) for v in data['variables']],
-                            is_ellipsis_args=data['is_ellipsis_args'],
-                            implicit=data['implicit'],
+        return CallableType([deserialize_type(t) for t in stream.read()],
+                            stream.read(),
+                            stream.read(),
+                            deserialize_type(stream.read()),
+                            Instance.deserialize(stream.read()),
+                            name=stream.read(),
+                            variables=[TypeVarDef.deserialize(v) for v in stream.read()],
+                            is_ellipsis_args=stream.read(),
+                            implicit=stream.read(),
                             bound_args=[(None if t is None else deserialize_type(t))
-                                        for t in data['bound_args']],
-                            def_extras=data['def_extras']
+                                        for t in stream.read()],
+                            def_extras=stream.read()
                             )
 
 
@@ -1159,14 +1207,18 @@ class Overloaded(FunctionLike):
         return self.items() == other.items()
 
     def serialize(self) -> JsonDict:
-        return {'.class': 'Overloaded',
-                'items': [t.serialize() for t in self.items()],
-                }
+        return pack([
+            'Overloaded',
+            [t.serialize() for t in self.items()],
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'Overloaded':
-        assert data['.class'] == 'Overloaded'
-        return Overloaded([CallableType.deserialize(t) for t in data['items']])
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'Overloaded'
+
+        return Overloaded([CallableType.deserialize(t) for t in stream.read()])
 
 
 class TupleType(Type):
@@ -1208,18 +1260,22 @@ class TupleType(Type):
         return self.items == other.items and self.fallback == other.fallback
 
     def serialize(self) -> JsonDict:
-        return {'.class': 'TupleType',
-                'items': [t.serialize() for t in self.items],
-                'fallback': self.fallback.serialize(),
-                'implicit': self.implicit,
-                }
+        return pack([
+            'TupleType',
+            [t.serialize() for t in self.items],
+            self.fallback.serialize(),
+            self.implicit,
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'TupleType':
-        assert data['.class'] == 'TupleType'
-        return TupleType([deserialize_type(t) for t in data['items']],
-                         Instance.deserialize(data['fallback']),
-                         implicit=data['implicit'])
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'TupleType'
+
+        return TupleType([deserialize_type(t) for t in stream.read()],
+                         Instance.deserialize(stream.read()),
+                         implicit=stream.read())
 
     def copy_modified(self, *, fallback: Optional[Instance] = None,
                       items: Optional[List[Type]] = None) -> 'TupleType':
@@ -1287,19 +1343,23 @@ class TypedDictType(Type):
             return NotImplemented
 
     def serialize(self) -> JsonDict:
-        return {'.class': 'TypedDictType',
-                'items': [[n, t.serialize()] for (n, t) in self.items.items()],
-                'required_keys': sorted(self.required_keys),
-                'fallback': self.fallback.serialize(),
-                }
+        return pack([
+            'TypedDictType',
+            [[n, t.serialize()] for (n, t) in self.items.items()],
+            sorted(self.required_keys),
+            self.fallback.serialize(),
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'TypedDictType':
-        assert data['.class'] == 'TypedDictType'
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'TypedDictType'
+
         return TypedDictType(OrderedDict([(n, deserialize_type(t))
-                                          for (n, t) in data['items']]),
-                             set(data['required_keys']),
-                             Instance.deserialize(data['fallback']))
+                                          for (n, t) in stream.read()]),
+                             set(stream.read()),
+                             Instance.deserialize(stream.read()))
 
     def is_anonymous(self) -> bool:
         return self.fallback.type.fullname() == 'mypy_extensions._TypedDict'
@@ -1481,18 +1541,21 @@ class LiteralType(Type):
             return raw
 
     def serialize(self) -> Union[JsonDict, str]:
-        return {
-            '.class': 'LiteralType',
-            'value': self.value,
-            'fallback': self.fallback.serialize(),
-        }
+        return pack([
+            'LiteralType',
+            self.value,
+            self.fallback.serialize(),
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'LiteralType':
-        assert data['.class'] == 'LiteralType'
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'LiteralType'
+
         return LiteralType(
-            value=data['value'],
-            fallback=Instance.deserialize(data['fallback']),
+            value=stream.read(),
+            fallback=Instance.deserialize(stream.read()),
         )
 
 
@@ -1618,14 +1681,18 @@ class UnionType(Type):
             return [i for i in self.items if not isinstance(i, NoneTyp)]
 
     def serialize(self) -> JsonDict:
-        return {'.class': 'UnionType',
-                'items': [t.serialize() for t in self.items],
-                }
+        return pack([
+            'UnionType',
+            [t.serialize() for t in self.items],
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'UnionType':
-        assert data['.class'] == 'UnionType'
-        return UnionType([deserialize_type(t) for t in data['items']])
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname == 'UnionType'
+
+        return UnionType([deserialize_type(t) for t in stream.read()])
 
 
 class PartialType(Type):
@@ -1739,12 +1806,18 @@ class TypeType(Type):
         return self.item == other.item
 
     def serialize(self) -> JsonDict:
-        return {'.class': 'TypeType', 'item': self.item.serialize()}
+        return pack([
+            'TypeType',
+            self.item.serialize()
+        ])
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> Type:
-        assert data['.class'] == 'TypeType'
-        return TypeType.make_normalized(deserialize_type(data['item']))
+        stream = Unpacker(data)
+        classname = stream.read()
+        assert classname ==  'TypeType'
+
+        return TypeType.make_normalized(deserialize_type(stream.read()))
 
 
 class ForwardRef(Type):
