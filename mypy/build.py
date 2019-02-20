@@ -732,9 +732,34 @@ class BuildManager(BuildManagerBase):
         return self.stats
 
 
-def deps_to_json(x: Dict[str, Set[str]]) -> str:
+def OLD_deps_to_json(x: Dict[str, Set[str]]) -> str:
     return json.dumps({k: list(v) for k, v in x.items()})
 
+
+def fix_trie(key: str, t: Dict[str, Any]) -> Dict[str, Any]:
+    out = [key]
+    dummy = {'': None}
+    for k, v in t.items():
+        if v == dummy or v is None:
+            out.append(k)
+        else:
+            out.append(fix_trie(k, v))
+    return out
+
+def trieify_names(key: str, names: Set[str]) -> Dict[str, Any]:
+    trie = {}  # type: Dict[str, Any]
+
+    for name in names:
+        parts = name.rstrip('<').split('.')
+        t = trie
+        for part in parts:
+            t = t.setdefault(part, {})
+        t[''] = None
+    return fix_trie(key, trie)
+
+
+def deps_to_json(x: Dict[str, Set[str]]) -> str:
+    return json.dumps([trieify_names(k, v) for k, v in x.items()])
 
 # File for storing metadata about all the fine-grained dependency caches
 DEPS_META_FILE = '@deps.meta.json'  # type: Final
