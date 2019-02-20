@@ -732,8 +732,9 @@ class BuildManager(BuildManagerBase):
         return self.stats
 
 
-def deps_to_json(x: Dict[str, Set[str]]) -> str:
-    return json.dumps({k: list(v) for k, v in x.items()})
+def deps_to_json(id: str, x: Dict[str, Set[str]]) -> str:
+    return json.dumps({k.replace(id, '^'):
+                       [t.replace(id, '^') for t in v] for k, v in x.items()})
 
 
 # File for storing metadata about all the fine-grained dependency caches
@@ -780,7 +781,7 @@ def write_deps_cache(rdeps: Dict[str, Dict[str, Set[str]]],
             deps_json = DEPS_ROOT_FILE
         assert deps_json
         manager.log("Writing deps cache", deps_json)
-        if not manager.metastore.write(deps_json, deps_to_json(rdeps[id])):
+        if not manager.metastore.write(deps_json, deps_to_json(id, rdeps[id])):
             manager.log("Error writing fine-grained deps JSON file {}".format(deps_json))
             error = True
         else:
