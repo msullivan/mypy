@@ -110,6 +110,8 @@ if USE_MYPYC:
     # ... and add back in the one test module we need
     mypyc_targets.append(os.path.join('test', 'visitors.py'))
 
+    mypyc_targets = ['nodes.py', 'types.py']
+
     # Fix the paths to be full
     mypyc_targets = [os.path.join('mypy', x) for x in mypyc_targets]
 
@@ -130,7 +132,7 @@ if USE_MYPYC:
         opt_level=opt_level,
         # Use multi-file compliation mode on windows because without it
         # our Appveyor builds run out of memory sometimes.
-        multi_file=sys.platform == 'win32',
+        multi_file=sys.platform == 'win32' or True,
     )
     cmdclass['build_ext'] = MypycifyBuildExt
     description += " (mypyc-compiled version)"
