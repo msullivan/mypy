@@ -2750,6 +2750,11 @@ def process_graph(graph: Graph, manager: BuildManager) -> None:
     else:
         manager.log("No fresh SCCs left in queue")
 
+    if os.getenv("PROCESS_ALL", None):
+        for prev_scc in fresh_scc_queue:
+            process_fresh_modules(graph, prev_scc, manager)
+
+
 
 def order_ascc(graph: Graph, ascc: AbstractSet[str], pri_max: int = PRI_ALL) -> List[str]:
     """Come up with the ideal processing order within an SCC.
