@@ -140,6 +140,22 @@ def pack(data: List[Any]) -> JsonDict:
     return data
 
 
+class BitUnpacker:
+    def __init__(self, data: int) -> None:
+        self.data = data
+
+    def read(self) -> bool:
+        ret = self.data & 1
+        self.data >>= 1
+        return bool(ret)
+
+
+def pack_bits(bits: List[bool]) -> int:
+    val = 0
+    for bit in reversed(bits):
+        val = (val << 1) | bit
+    return val
+
 class Node(Context):
     """Common base class for all non-type parse tree nodes."""
 
@@ -510,7 +526,7 @@ class OverloadedFuncDef(FuncBase, SymbolNode, Statement):
             if len(res.items) > 0:
                 res.set_line(res.impl.line)
 
-        set_flags(res, stream.read())
+        set_flags(res, stream.read(), FUNCBASE_FLAGS)
         # NOTE: res.info will be set in the fixup phase.
         return res
 
@@ -677,7 +693,8 @@ class FuncDef(FuncItem, SymbolNode, Statement):
         # NOTE: ret.info is set in the fixup phase.
         ret.arg_names = stream.read()
         ret.arg_kinds = stream.read()
-        set_flags(ret, stream.read())
+
+        set_flags(ret, stream.read(), FUNCDEF_FLAGS)
         # Leave these uninitialized so that future uses will trigger an error
         del ret.arguments
         del ret.max_pos
@@ -848,7 +865,7 @@ class Var(SymbolNode):
         type = None if type_raw is None else mypy.types.deserialize_type(type_raw)
         v = Var(name, type)
         v._fullname = fullname
-        set_flags(v, stream.read())
+        set_flags(v, stream.read(), VAR_FLAGS)
         v.final_value = stream.read()
         return v
 
@@ -2567,7 +2584,7 @@ class TypeInfo(SymbolNode):
         ti.typeddict_type = (None if typeddict_type is None
                             else mypy.types.TypedDictType.deserialize(typeddict_type))
 
-        set_flags(ti, stream.read())
+        set_flags(ti, stream.read(), TypeInfo.FLAGS)
         ti.metadata = stream.read()
         return ti
 
@@ -3040,13 +3057,15 @@ class SymbolTable(Dict[str, SymbolTableNode]):
         return st
 
 
-def get_flags(node: Node, names: List[str]) -> List[str]:
-    return [name for name in names if getattr(node, name)]
+def get_flags(node: Node, names: List[str]) -> int:
+    return pack_bits([getattr(node, name) for name in names])
 
 
-def set_flags(node: Node, flags: List[str]) -> None:
+def set_flags(node: Node, flag_val: int, flags: List[str]) -> None:
     for name in flags:
-        setattr(node, name, True)
+        if flag_val & 1:
+            setattr(node, name, True)
+        flag_val >>= 1
 
 
 def get_member_expr_fullname(expr: MemberExpr) -> Optional[str]:
