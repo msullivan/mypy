@@ -686,21 +686,21 @@ class Instance(Type):
             inst.type_ref = data
             return inst
 
-        stream = Unpacker(data)
-        classname = stream.read()
+#        stream = Unpacker(data)
+        classname = data[0]
         assert classname == 'Instance'
 
-        type_ref = stream.read()
+        type_ref = data[1]
 
         args = []  # type: List[Type]
-        args_list = stream.read()
+        args_list = data[2]
         assert isinstance(args_list, list)
         args = [deserialize_type(arg) for arg in args_list]
 
         inst = Instance(NOT_READY, args)
         inst.type_ref = type_ref  # Will be fixed up by fixup.py later.
 
-        final_value = stream.read()
+        final_value = data[3]
         if final_value:
             inst.final_value = LiteralType.deserialize(final_value)
         return inst
@@ -1138,23 +1138,23 @@ class CallableType(FunctionLike):
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'CallableType':
-        stream = Unpacker(data)
-        classname = stream.read()
+#        stream = Unpacker(data)
+        classname = data[0]
         assert classname == 'CallableType'
 
         # TODO: Set definition to the containing SymbolNode?
-        return CallableType([deserialize_type(t) for t in stream.read()],
-                            stream.read(),
-                            stream.read(),
-                            deserialize_type(stream.read()),
-                            Instance.deserialize(stream.read()),
-                            name=stream.read(),
-                            variables=[TypeVarDef.deserialize(v) for v in stream.read()],
-                            is_ellipsis_args=stream.read(),
-                            implicit=stream.read(),
+        return CallableType([deserialize_type(t) for t in data[1]],
+                            data[2],
+                            data[3],
+                            deserialize_type(data[4]),
+                            Instance.deserialize(data[5]),
+                            name=data[6],
+                            variables=[TypeVarDef.deserialize(v) for v in data[7]],
+                            is_ellipsis_args=data[8],
+                            implicit=data[9],
                             bound_args=[(None if t is None else deserialize_type(t))
-                                        for t in stream.read()],
-                            def_extras=stream.read()
+                                        for t in data[10]],
+                            def_extras=data[11]
                             )
 
 
