@@ -64,6 +64,9 @@ if MYPY:
     from mypy.type_visitor import TypeVisitor, SyntheticTypeVisitor
 
 
+from collections import defaultdict
+counts = defaultdict(int)  # type: Dict[str, int]
+
 class TypeOfAny:
     """
     This class describes different types of Any. Each 'Any' can be of only one type at a time.
@@ -90,9 +93,14 @@ class TypeOfAny:
 
 def deserialize_type(data: Union[JsonDict, str]) -> 'Type':
     if isinstance(data, str):
-        return Instance.deserialize(data)
+#        counts['!Instance'] += 1
+        if data == '.None':
+            return NoneTyp.deserialize(data)
+        else:
+            return Instance.deserialize(data)
 
     classname = data[0]
+#    counts[classname] += 1
     method = deserialize_map.get(classname)
     if method is not None:
         return method(data)

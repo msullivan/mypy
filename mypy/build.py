@@ -161,6 +161,9 @@ def build(sources: List[BuildSource],
     try:
         result = _build(sources, options, alt_lib_path, flush_errors, fscache)
         result.errors = messages
+        import mypy.nodes, mypy.types
+#        print(sorted(mypy.nodes.counts.items(), key=lambda s: s[1]))
+#        print(sorted(mypy.types.counts.items(), key=lambda s: s[1]))
         return result
     except CompileError as e:
         # CompileErrors raised from an errors object carry all of the

@@ -181,6 +181,9 @@ class Expression(Node):
 Lvalue = Expression
 
 
+from collections import defaultdict
+counts = defaultdict(int)  # type: Dict[str, int]
+
 @trait
 class SymbolNode(Node):
     """Nodes that can be stored in a symbol table."""
@@ -205,6 +208,7 @@ class SymbolNode(Node):
     def deserialize(cls, data: JsonDict) -> 'SymbolNode':
         classname = data[0]
         method = deserialize_map.get(classname)
+#        counts[classname] += 1
         if method is not None:
             return method(data)
         raise NotImplementedError('unexpected .class {}'.format(classname))
