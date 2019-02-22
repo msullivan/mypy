@@ -455,6 +455,12 @@ class FuncBase(Node):
     def fullname(self) -> Bogus[str]:
         return self._fullname
 
+    def deserialize_flags(self, stream: BitUnpacker) -> None:
+        self.is_property = stream.read()
+        self.is_class = stream.read()
+        self.is_static = stream.read()
+        self.is_final = stream.read()
+
 
 OverloadPart = Union['FuncDef', 'Decorator']
 
@@ -526,7 +532,8 @@ class OverloadedFuncDef(FuncBase, SymbolNode, Statement):
             if len(res.items) > 0:
                 res.set_line(res.impl.line)
 
-        set_flags(res, stream.read(), FUNCBASE_FLAGS)
+        res.deserialize_flags(BitUnpacker(stream.read()))
+
         # NOTE: res.info will be set in the fixup phase.
         return res
 
@@ -616,6 +623,14 @@ class FuncItem(FuncBase):
     def is_dynamic(self) -> bool:
         return self.type is None
 
+    def deserialize_flags(self, stream: BitUnpacker) -> None:
+        super().deserialize_flags(stream)
+        self.is_overload = stream.read()
+        self.is_generator = stream.read()
+        self.is_coroutine = stream.read()
+        self.is_async_generator = stream.read()
+        self.is_awaitable_coroutine = stream.read()
+
 
 FUNCDEF_FLAGS = FUNCITEM_FLAGS + [
     'is_decorated', 'is_conditional', 'is_abstract',
@@ -694,12 +709,19 @@ class FuncDef(FuncItem, SymbolNode, Statement):
         ret.arg_names = stream.read()
         ret.arg_kinds = stream.read()
 
-        set_flags(ret, stream.read(), FUNCDEF_FLAGS)
+        ret.deserialize_flags(BitUnpacker(stream.read()))
+
         # Leave these uninitialized so that future uses will trigger an error
         del ret.arguments
         del ret.max_pos
         del ret.min_args
         return ret
+
+    def deserialize_flags(self, stream: BitUnpacker) -> None:
+        super().deserialize_flags(stream)
+        self.is_decorated = stream.read()
+        self.is_conditional = stream.read()
+        self.is_abstract = stream.read()
 
 
 class Decorator(SymbolNode, Statement):
@@ -2985,10 +3007,9 @@ class SymbolTableNode:
             node_kinds[self.kind],
             tag,
             data,
-            self.module_hidden,
-            self.module_public,
-            self.implicit,
-            self.plugin_generated,
+            pack_bits([
+                self.module_hidden, self.module_public, self.implicit, self.plugin_generated,
+            ]),
         ])
 
     @classmethod
@@ -3008,10 +3029,11 @@ class SymbolTableNode:
             if raw_node:
                 node = SymbolNode.deserialize(raw_node)
             stnode = SymbolTableNode(kind, node)
-        stnode.module_hidden = stream.read()
-        stnode.module_public = stream.read()
-        stnode.implicit = stream.read()
-        stnode.plugin_generated = stream.read()
+        bits = BitUnpacker(stream.read())
+        stnode.module_hidden = bits.read()
+        stnode.module_public = bits.read()
+        stnode.implicit = bits.read()
+        stnode.plugin_generated = bits.read()
         return stnode
 
 
