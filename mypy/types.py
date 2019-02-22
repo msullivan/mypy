@@ -544,14 +544,10 @@ class NoneTyp(Type):
         return visitor.visit_none_type(self)
 
     def serialize(self) -> JsonDict:
-        return pack(['NoneTyp'])
+        return '.None'
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'NoneTyp':
-        stream = Unpacker(data)
-        classname = stream.read()
-        assert classname == 'NoneTyp'
-
         return NoneTyp()
 
 
@@ -1689,10 +1685,10 @@ class UnionType(Type):
             return [i for i in self.items if not isinstance(i, NoneTyp)]
 
     def serialize(self) -> JsonDict:
-        return pack([
-            'UnionType',
-            [t.serialize() for t in self.items],
-        ])
+        return pack(
+            ['UnionType'] +
+            [t.serialize() for t in self.items]
+        )
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> 'UnionType':
@@ -1700,7 +1696,7 @@ class UnionType(Type):
         classname = stream.read()
         assert classname == 'UnionType'
 
-        return UnionType([deserialize_type(t) for t in stream.read()])
+        return UnionType([deserialize_type(data[i]) for i in range(1, len(data))])
 
 
 class PartialType(Type):
