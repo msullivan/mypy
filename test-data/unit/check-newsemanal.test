@@ -954,6 +954,13 @@ class C: pass
 x: int
 reveal_type(x) # E: Revealed type is 'a.C'
 
+[case testNewAnalyzerSomething]
+class C:
+    def __init__(self) -> None:
+        self.x: D = D()
+        self.x: int = 10 # E: Incompatible types in assignment (expression has type "int", variable has type "D")
+        class D: ...
+
 [case testNewAnalyzerNamespaceCompleteness]
 import a
 

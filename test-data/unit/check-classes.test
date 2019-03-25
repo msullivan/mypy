@@ -5809,3 +5809,10 @@ def test() -> None:
         return
     reveal_type(x)  # E: Revealed type is 'Union[Type[__main__.One], Type[__main__.Other]]'
 [builtins fixtures/isinstancelist.pyi]
+
+[case testAsdf]
+class C:
+    def f(self) -> None:
+        self.x: D = D()  # Expression has type "D", variable has type "int"
+        self.x = 10  # type: int
+class D: pass

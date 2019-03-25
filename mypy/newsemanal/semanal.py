@@ -1964,8 +1964,19 @@ class NewSemanticAnalyzer(NodeVisitor[None],
             # Initializer couldn't be fully analyzed. Defer the current node and give up.
             # Make sure that if we skip the definition of some local names, they can't be
             # added later in this scope, since an earlier definition should take precedence.
-            for expr in names_modified_by_assignment(s):
+            names_modified, members_modified = names_modified_by_assignment(s)
+            for expr in names_modified:
                 self.mark_incomplete(expr.name, expr)
+            if self.type:
+                self.locals.append(self.type.names)  # AW HELL JEAH
+                for expr in members_modified:
+                    print("MARKING UP SOME SHIT", expr.name)
+#                    assert False
+                    self.mark_incomplete(expr.name, expr)
+                self.locals.pop()  # AW HELL JEAH
+
+            # XXX: HERE, DO IT HERE - this is where we would need to
+            # put in placeholders for self assignments
             return
 
         # The r.h.s. is now ready to be classified, first check if it is a special form:
@@ -2178,6 +2189,7 @@ class NewSemanticAnalyzer(NodeVisitor[None],
 
     def process_type_annotation(self, s: AssignmentStmt) -> None:
         """Analyze type annotation or infer simple literal type."""
+        print("UHHH", s, s.type)
         if s.type:
             lvalue = s.lvalues[-1]
             allow_tuple_literal = isinstance(lvalue, TupleExpr)
@@ -2185,6 +2197,7 @@ class NewSemanticAnalyzer(NodeVisitor[None],
             # Don't store not ready types (including placeholders).
             if analyzed is None or has_placeholder(analyzed):
                 self.defer()
+                print("LOL", s)
                 return
             s.type = analyzed
             if (self.type and self.type.is_protocol and isinstance(lvalue, NameExpr) and
@@ -2199,6 +2212,7 @@ class NewSemanticAnalyzer(NodeVisitor[None],
             if len(s.lvalues) == 1 and isinstance(s.lvalues[0], RefExpr):
                 if s.lvalues[0].is_inferred_def:
                     s.type = self.analyze_simple_literal_type(s.rvalue, s.is_final_def)
+        print('WTF', s.line, s.type, s.lvalues)
         if s.type:
             # Store type into nodes.
             for lvalue in s.lvalues:
@@ -2605,15 +2619,19 @@ class NewSemanticAnalyzer(NodeVisitor[None],
                     lval.def_var = v
                     lval.node = v
                     # TODO: should we also set lval.kind = MDEF?
-                    self.type.names[lval.name] = SymbolTableNode(MDEF, v, implicit=True)
+                    print('POOP', lval.name)
+                    self.add_symbol_table_node(
+                        lval.name,
+                        SymbolTableNode(MDEF, v, implicit=True),
+                        names=self.type.names)
+                    # self.add_symbol_table_node(
+                    #     lval.name,
+                    #     PlaceholderNode(lval.name, v, False),
+                    #     names=self.type.names)
         self.check_lvalue_validity(lval.node, lval)
 
     def is_self_member_ref(self, memberexpr: MemberExpr) -> bool:
-        """Does memberexpr to refer to an attribute of self?"""
-        if not isinstance(memberexpr.expr, NameExpr):
-            return False
-        node = memberexpr.expr.node
-        return isinstance(node, Var) and node.is_self
+        return _is_self_member_ref(memberexpr)
 
     def check_lvalue_validity(self, node: Union[Expression, SymbolNode, None],
                               ctx: Context) -> None:
@@ -2627,8 +2645,10 @@ class NewSemanticAnalyzer(NodeVisitor[None],
             self.fail('Star type only allowed for starred expressions', lvalue)
         if isinstance(lvalue, RefExpr):
             lvalue.is_inferred_def = False
+            print('asdf', lvalue.node)
             if isinstance(lvalue.node, Var):
                 var = lvalue.node
+                print(lvalue.line, lvalue, var.name(), var, typ)
                 var.type = typ
                 var.is_ready = True
             # If node is not a variable, we'll catch it elsewhere.
@@ -3916,6 +3936,7 @@ class NewSemanticAnalyzer(NodeVisitor[None],
             becomes_typeinfo: Pass this to PlaceholderNode (used by special forms like
                 named tuples that will create TypeInfos).
         """
+        print(name, node, becomes_typeinfo)
         self.defer()
         if name == '*':
             self.incomplete = True
@@ -4155,14 +4176,17 @@ class NewSemanticAnalyzer(NodeVisitor[None],
                 and (name in self.global_decls[-1]
                      or name in self.nonlocal_decls[-1]))
 
-    def add_symbol_table_node(self, name: str, symbol: SymbolTableNode,
-                              context: Optional[Context] = None) -> bool:
+    def add_symbol_table_node(self,
+                              name: str, symbol: SymbolTableNode,
+                              context: Optional[Context] = None,
+                              names: Optional[SymbolTable] = None) -> bool:
         """Add symbol table node to the currently active symbol table.
 
         Return True if we actually added the symbol, or False if we refused to do so
         (because something is not ready).
         """
-        names = self.current_symbol_table()
+        if names is None:
+            names = self.current_symbol_table()
         existing = names.get(name)
         if (existing is not None
                 and context is not None
@@ -4480,23 +4504,40 @@ def apply_semantic_analyzer_patches(patches: List[Tuple[int, Callable[[], None]]
         patch_func()
 
 
-def names_modified_by_assignment(s: AssignmentStmt) -> List[NameExpr]:
+def _is_self_member_ref(memberexpr: MemberExpr) -> bool:
+    """Does memberexpr to refer to an attribute of self?"""
+    if not isinstance(memberexpr.expr, NameExpr):
+        return False
+    node = memberexpr.expr.node
+    return isinstance(node, Var) and node.is_self
+
+
+def names_modified_by_assignment(s: AssignmentStmt) -> Tuple[List[NameExpr], List[MemberExpr]]:
     """Return all unqualified (short) names assigned to in an assignment statement."""
-    result = []  # type: List[NameExpr]
+    names = []  # type: List[NameExpr]
+    members = []  # type: List[MemberExpr]
     for lvalue in s.lvalues:
-        result += names_modified_in_lvalue(lvalue)
-    return result
+        n, m = names_modified_in_lvalue(lvalue)
+        names += n
+        members += m
+    return names, members
 
 
-def names_modified_in_lvalue(lvalue: Lvalue) -> List[NameExpr]:
+def names_modified_in_lvalue(lvalue: Lvalue) -> Tuple[List[NameExpr], List[MemberExpr]]:
     """Return all NameExpr assignment targets in an Lvalue."""
     if isinstance(lvalue, NameExpr):
-        return [lvalue]
+        return [lvalue], []
+    elif isinstance(lvalue, MemberExpr):# and _is_self_member_ref(lvalue):
+#        assert False
+        return [], [lvalue]
     elif isinstance(lvalue, StarExpr):
         return names_modified_in_lvalue(lvalue.expr)
     elif isinstance(lvalue, (ListExpr, TupleExpr)):
-        result = []  # type: List[NameExpr]
-        for item in lvalue.items:
-            result += names_modified_in_lvalue(item)
-        return result
-    return []
+        names = []  # type: List[NameExpr]
+        members = []  # type: List[MemberExpr]
+        for lvalue in lvalue.items:
+            n, m = names_modified_in_lvalue(lvalue)
+            names += n
+            members += m
+        return names, members
+    return [], []
