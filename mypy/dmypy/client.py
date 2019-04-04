@@ -18,7 +18,7 @@ from typing import Any, Callable, Dict, Mapping, Optional, Tuple, List
 from mypy.dmypy_util import DEFAULT_STATUS_FILE, receive
 from mypy.ipc import IPCClient, IPCException
 from mypy.dmypy_os import alive, kill
-from mypy.util import check_python_version, get_terminal_width
+from mypy.util import check_python_version, get_terminal_width, handle_keyboard_interrupt
 
 from mypy.version import __version__
 
@@ -552,4 +552,5 @@ def is_running(status_file: str) -> bool:
 
 # Run main().
 def console_entry() -> None:
-    main(sys.argv[1:])
+    with handle_keyboard_interrupt():
+        main(sys.argv[1:])

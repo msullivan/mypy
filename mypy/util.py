@@ -3,13 +3,15 @@
 import os
 import pathlib
 import re
+import signal
 import subprocess
 import sys
 import hashlib
 import io
+import contextlib
 
 from typing import (
-    TypeVar, List, Tuple, Optional, Dict, Sequence, Iterable, Container, IO, Callable
+    TypeVar, List, Tuple, Optional, Dict, Sequence, Iterable, Iterator, Container, IO, Callable
 )
 from typing_extensions import Final, Type, Literal
 
@@ -219,6 +221,20 @@ def try_find_python2_interpreter() -> Optional[str]:
         except OSError:
             pass
     return None
+
+
+@contextlib.contextmanager
+def handle_keyboard_interrupt() -> Iterator[None]:
+    try:
+        yield
+    except KeyboardInterrupt:
+        if sys.platform == 'win32':
+            # We do sys._exit so we consistently skip interpreter
+            # cleanup across platforms
+            sys._exit(0xC000013A - 2**32)
+        else:
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            os.kill(os.getpid(), signal.SIGINT)
 
 
 PASS_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>

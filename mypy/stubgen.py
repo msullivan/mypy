@@ -1554,14 +1554,15 @@ def parse_options(args: List[str]) -> Options:
 
 
 def main() -> None:
-    mypy.util.check_python_version('stubgen')
-    # Make sure that the current directory is in sys.path so that
-    # stubgen can be run on packages in the current directory.
-    if not ('' in sys.path or '.' in sys.path):
-        sys.path.insert(0, '')
+    with mypy.util.handle_keyboard_interrupt():
+        mypy.util.check_python_version('stubgen')
+        # Make sure that the current directory is in sys.path so that
+        # stubgen can be run on packages in the current directory.
+        if not ('' in sys.path or '.' in sys.path):
+            sys.path.insert(0, '')
 
-    options = parse_options(sys.argv[1:])
-    generate_stubs(options)
+        options = parse_options(sys.argv[1:])
+        generate_stubs(options)
 
 
 if __name__ == '__main__':
