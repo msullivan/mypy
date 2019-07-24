@@ -21,12 +21,22 @@ from mypy.options import Options
 from mypy.test.data import DataDrivenTestCase, fix_cobertura_filename
 from mypy.test.config import test_temp_dir
 import mypy.version
+from mypy.test.data import DataDrivenTestCase
+import mypy.state
 
 skip = pytest.mark.skip
 
 # AssertStringArraysEqual displays special line alignment helper messages if
 # the first different line has at least this many characters,
 MIN_LINE_LENGTH_FOR_ALIGNMENT = 5
+
+
+class StrictOptionalSettingSuite(Suite):
+    def setUp(self) -> None:
+        mypy.state.strict_optional = False
+
+    def tearDown(self) -> None:
+        del mypy.state.strict_optional
 
 
 def run_mypy(args: List[str]) -> None:

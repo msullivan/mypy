@@ -1,12 +1,13 @@
-from mypy.test.helpers import Suite, assert_true, skip
+from mypy.test.helpers import StrictOptionalSettingSuite, assert_true, skip
 from mypy.nodes import CONTRAVARIANT, INVARIANT, COVARIANT
 from mypy.subtypes import is_subtype
 from mypy.test.typefixture import TypeFixture, InterfaceTypeFixture
 from mypy.types import Type
 
 
-class SubtypingSuite(Suite):
+class SubtypingSuite(StrictOptionalSettingSuite):
     def setUp(self) -> None:
+        super().setUp()
         self.fx = TypeFixture(INVARIANT)
         self.fx_contra = TypeFixture(CONTRAVARIANT)
         self.fx_co = TypeFixture(COVARIANT)

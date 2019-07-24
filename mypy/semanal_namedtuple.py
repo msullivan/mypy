@@ -23,6 +23,7 @@ from mypy.nodes import (
 from mypy.options import Options
 from mypy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
 from mypy.util import get_unique_redefinition_name
+from mypy.state import strict_optional_set
 
 # Matches "_prohibited" in typing.py, but adds __annotations__, which works at runtime but can't
 # easily be supported in a static checker.
@@ -382,8 +383,13 @@ class NamedTupleAnalyzer:
         # We can't calculate the complete fallback type until after semantic
         # analysis, since otherwise base classes might be incomplete. Postpone a
         # callback function that patches the fallback.
-        self.api.schedule_patch(PRIORITY_FALLBACKS,
-                                lambda: calculate_tuple_fallback(tuple_base))
+        strict_optional = self.options.strict_optional
+
+        def patch() -> None:
+            with strict_optional_set(strict_optional):
+                return calculate_tuple_fallback(tuple_base)
+
+        self.api.schedule_patch(PRIORITY_FALLBACKS, patch)
 
         def add_field(var: Var, is_initialized_in_class: bool = False,
                       is_property: bool = False) -> None:

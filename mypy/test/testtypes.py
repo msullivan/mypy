@@ -2,7 +2,9 @@
 
 from typing import List, Tuple
 
-from mypy.test.helpers import Suite, assert_equal, assert_true, assert_false, assert_type, skip
+from mypy.test.helpers import (
+    StrictOptionalSettingSuite, assert_equal, assert_true, assert_false, assert_type, skip,
+)
 from mypy.erasetype import erase_type
 from mypy.expandtype import expand_type
 from mypy.join import join_types, join_simple
@@ -21,8 +23,9 @@ from mypy.state import strict_optional_set
 from mypy.typeops import true_only, false_only
 
 
-class TypesSuite(Suite):
+class TypesSuite(StrictOptionalSettingSuite):
     def setUp(self) -> None:
+        super().setUp()
         self.x = UnboundType('X')  # Helpers
         self.y = UnboundType('Y')
         self.fx = TypeFixture()
@@ -127,8 +130,9 @@ class TypesSuite(Suite):
         assert modules == {'__main__', 'builtins'}
 
 
-class TypeOpsSuite(Suite):
+class TypeOpsSuite(StrictOptionalSettingSuite):
     def setUp(self) -> None:
+        super().setUp()
         self.fx = TypeFixture(INVARIANT)
         self.fx_co = TypeFixture(COVARIANT)
         self.fx_contra = TypeFixture(CONTRAVARIANT)
@@ -475,8 +479,9 @@ class TypeOpsSuite(Suite):
                             variables=tv)
 
 
-class JoinSuite(Suite):
+class JoinSuite(StrictOptionalSettingSuite):
     def setUp(self) -> None:
+        super().setUp()
         self.fx = TypeFixture()
 
     def test_trivial_cases(self) -> None:
@@ -799,8 +804,9 @@ class JoinSuite(Suite):
                         a[-1], self.fx.type_type)
 
 
-class MeetSuite(Suite):
+class MeetSuite(StrictOptionalSettingSuite):
     def setUp(self) -> None:
+        super().setUp()
         self.fx = TypeFixture()
 
     def test_trivial_cases(self) -> None:
@@ -1005,8 +1011,9 @@ class MeetSuite(Suite):
                             a[-1], self.fx.function)
 
 
-class SameTypeSuite(Suite):
+class SameTypeSuite(StrictOptionalSettingSuite):
     def setUp(self) -> None:
+        super().setUp()
         self.fx = TypeFixture()
 
     def test_literal_type(self) -> None:

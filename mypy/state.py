@@ -5,14 +5,21 @@ from typing import Optional, Tuple, Iterator
 # good reason.
 
 # Value varies by file being processed
-strict_optional = False
+MYPY = False
+if MYPY:
+    strict_optional = False
 find_occurrences = None  # type: Optional[Tuple[str, str]]
 
 
 @contextmanager
 def strict_optional_set(value: bool) -> Iterator[None]:
     global strict_optional
-    saved = strict_optional
+    saved = globals().get('strict_optional')
     strict_optional = value
-    yield
-    strict_optional = saved
+    try:
+        yield
+    finally:
+        if saved is not None:
+            strict_optional = saved
+        else:
+            del strict_optional

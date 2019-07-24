@@ -2,15 +2,16 @@
 
 from typing import List, Union, Tuple, Optional
 
-from mypy.test.helpers import Suite, assert_equal
+from mypy.test.helpers import StrictOptionalSettingSuite, assert_equal
 from mypy.constraints import SUPERTYPE_OF, SUBTYPE_OF, Constraint
 from mypy.solve import solve_constraints
 from mypy.test.typefixture import TypeFixture
 from mypy.types import Type, TypeVarType, TypeVarId
 
 
-class SolveSuite(Suite):
+class SolveSuite(StrictOptionalSettingSuite):
     def setUp(self) -> None:
+        super().setUp()
         self.fx = TypeFixture()
 
     def test_empty_input(self) -> None:

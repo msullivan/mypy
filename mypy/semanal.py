@@ -119,6 +119,7 @@ from mypy.reachability import (
     MYPY_TRUE, MYPY_FALSE
 )
 from mypy.mro import calculate_mro, MroError
+from mypy.state import strict_optional_set
 
 T = TypeVar('T')
 
@@ -1505,7 +1506,13 @@ class SemanticAnalyzer(NodeVisitor[None],
         if base.partial_fallback.type.fullname == 'builtins.tuple':
             # Fallback can only be safely calculated after semantic analysis, since base
             # classes may be incomplete. Postpone the calculation.
-            self.schedule_patch(PRIORITY_FALLBACKS, lambda: calculate_tuple_fallback(base))
+            strict_optional = self.options.strict_optional
+
+            def patch() -> None:
+                with strict_optional_set(strict_optional):
+                    return calculate_tuple_fallback(base)
+
+            self.schedule_patch(PRIORITY_FALLBACKS, patch)
 
         return base.partial_fallback
 

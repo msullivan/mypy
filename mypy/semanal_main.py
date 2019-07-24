@@ -128,7 +128,8 @@ def semantic_analysis_for_targets(
             continue
         process_top_level_function(analyzer, state, state.id,
                                    n.node.fullname, n.node, n.active_typeinfo, patches)
-    apply_semantic_analyzer_patches(patches)
+    with strict_optional_set(state.options.strict_optional):
+        apply_semantic_analyzer_patches(patches)
 
     check_type_arguments_in_targets(nodes, state, state.manager.errors)
     calculate_class_properties(graph, [state.id], state.manager.errors)
@@ -318,7 +319,8 @@ def semantic_analyze_target(target: str,
     analyzer.nonlocal_decls = [set()]
     analyzer.globals = tree.names
     analyzer.progress = False
-    with state.wrap_context(check_blockers=False):
+    with state.wrap_context(check_blockers=False), (
+            strict_optional_set(state.options.strict_optional)):
         refresh_node = node
         if isinstance(refresh_node, Decorator):
             # Decorator expressions will be processed as part of the module top level.

@@ -61,6 +61,7 @@ from mypy.renaming import VariableRenameVisitor
 from mypy.config_parser import parse_mypy_comments
 from mypy.freetree import free_tree
 from mypy import errorcodes as codes
+from mypy.state import strict_optional_set
 
 
 # Switch to True to produce debug output related to fine-grained incremental
@@ -2185,10 +2186,11 @@ class State:
             # TODO: Consider relaxing this -- maybe allow some typeshed changes to be tracked.
             return {}
         from mypy.server.deps import get_dependencies  # Lazy import to speed up startup
-        return get_dependencies(target=self.tree,
-                                type_map=self.type_map(),
-                                python_version=self.options.python_version,
-                                options=self.manager.options)
+        with strict_optional_set(self.options.strict_optional):
+            return get_dependencies(target=self.tree,
+                                    type_map=self.type_map(),
+                                    python_version=self.options.python_version,
+                                    options=self.manager.options)
 
     def update_fine_grained_deps(self, deps: Dict[str, Set[str]]) -> None:
         options = self.manager.options
