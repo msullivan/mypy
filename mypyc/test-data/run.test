@@ -4426,7 +4426,7 @@ class Base:
     y = None  # type: object
 
 [file driver.py]
-from native import make_garbage
+#from native import make_garbage
 import gc
 
 def test():
@@ -4439,7 +4439,7 @@ def test():
     #x = len(gc.get_objects())
     o1l = gc.get_objects()
     #make_garbage([1,2,3,4])
-    gc.collect(0)
+    gc.collect(2)
     # lol = []
     #y = len(gc.get_objects())
     o2l = gc.get_objects()
