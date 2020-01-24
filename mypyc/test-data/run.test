@@ -4426,7 +4426,7 @@ class Base:
     y = None  # type: object
 
 [file driver.py]
-#from native import make_garbage
+from native import make_garbage
 import gc
 
 def test():
