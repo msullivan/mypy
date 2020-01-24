@@ -4431,11 +4431,18 @@ import gc
 
 def test():
     gc.collect(2)
-    x = len(gc.get_objects())
+    #x = len(gc.get_objects())
+    o1l = gc.get_objects()
     make_garbage([1,2,3,4])
     gc.collect(2)
-    y = len(gc.get_objects())
-    assert x == y
+    # lol = []
+    #y = len(gc.get_objects())
+    o2l = gc.get_objects()
+    o1 = {id(x): x for x in o1l}
+    o2 = {id(x): x for x in o2l if x is not o1l}
+
+    #assert x == y, (x, y)
+    assert len(o1) == len(o2), [o2[k] for k in (o2.keys()-o1.keys())]
 
 test()
 
