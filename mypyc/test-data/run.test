@@ -4433,7 +4433,7 @@ def test():
     gc.collect(2)
     #x = len(gc.get_objects())
     o1l = gc.get_objects()
-    make_garbage([1,2,3,4])
+    #make_garbage([1,2,3,4])
     gc.collect(2)
     # lol = []
     #y = len(gc.get_objects())
