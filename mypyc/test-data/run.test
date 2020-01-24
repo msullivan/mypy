@@ -4442,7 +4442,7 @@ def test():
     o2 = {id(x): x for x in o2l if x is not o1l}
 
     #assert x == y, (x, y)
-    assert len(o1) == len(o2), (len(o1), len(o2), [o2[k] for k in (o2.keys()-o1.keys())], [o2[k] for k in (o1.keys()-o2.keys())])
+    assert len(o1) == len(o2), (len(o1), len(o2), [o2[k] for k in (o2.keys()-o1.keys())], [o1[k] for k in (o1.keys()-o2.keys())])
 
 test()
 
