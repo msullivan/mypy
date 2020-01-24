@@ -4426,14 +4426,16 @@ class Base:
     y = None  # type: object
 
 [file driver.py]
-from native import make_garbage
+#from native import make_garbage
 import gc
 
 def test():
 #    gc.collect(2)
-    a = gc.get_count(), gc.get_threshold()
-    print(a)
-    gc.collect(0)
+#    a = gc.get_count(), gc.get_threshold()
+#    print(a)
+    gc.collect(2)
+#    a = gc.get_count(), gc.get_threshold()
+#    print(a)
     #x = len(gc.get_objects())
     o1l = gc.get_objects()
     #make_garbage([1,2,3,4])
@@ -4445,7 +4447,7 @@ def test():
     o2 = {id(x): x for x in o2l if x is not o1l}
 
     #assert x == y, (x, y)
-    assert len(o1) == len(o2), (len(o1), len(o2), [o2[k] for k in (o2.keys()-o1.keys())], [o1[k] for k in (o1.keys()-o2.keys())], a)
+    assert len(o1) == len(o2), (len(o1), len(o2), [o2[k] for k in (o2.keys()-o1.keys())], [o1[k] for k in (o1.keys()-o2.keys())])
 
 test()
 
