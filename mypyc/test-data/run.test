@@ -4431,7 +4431,7 @@ import gc
 
 def test():
 #    gc.collect(2)
-    a = gc.get_count(), gc.get_threshhold()
+    a = gc.get_count(), gc.get_threshold()
     gc.collect(0)
     #x = len(gc.get_objects())
     o1l = gc.get_objects()
