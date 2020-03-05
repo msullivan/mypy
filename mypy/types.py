@@ -122,7 +122,7 @@ def deserialize_type(data: Union[JsonDict, str]) -> 'Type':
 class Type(mypy.nodes.Context):
     """Abstract base class for all types."""
 
-    __slots__ = ('can_be_true', 'can_be_false')
+    __slots__ = ()
 
     def __init__(self, line: int = -1, column: int = -1) -> None:
         super().__init__(line, column)
@@ -134,6 +134,28 @@ class Type(mypy.nodes.Context):
 
     def can_be_false_default(self) -> bool:
         return True
+
+    @property
+    def can_be_true(self) -> bool:
+        return bool((self._val >> 60) & 1)
+
+    @can_be_true.setter
+    def can_be_true(self, b: bool) -> None:
+        if b:
+            self._val |= (1 << 60)
+        else:
+            self._val &= ~(1 << 60)
+
+    @property
+    def can_be_false(self) -> bool:
+        return bool((self._val >> 61) & 1)
+
+    @can_be_false.setter
+    def can_be_false(self, b: bool) -> None:
+        if b:
+            self._val |= (1 << 61)
+        else:
+            self._val &= ~(1 << 61)
 
     def accept(self, visitor: 'TypeVisitor[T]') -> T:
         raise RuntimeError('Not implemented')
