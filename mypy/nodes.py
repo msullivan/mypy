@@ -16,14 +16,55 @@ from mypy.visitor import NodeVisitor, StatementVisitor, ExpressionVisitor
 from mypy.bogus_type import Bogus
 
 
+LINE_BITS = 20  # type: Final
+COL_BITS = 12  # type: Final
+LINE_MASK = (1<<LINE_BITS)-1  # type: Final
+LINE_SHIFT = 0  # type: Final
+END_LINE_SHIFT = LINE_BITS  # type: Final
+COL_SHIFT = END_LINE_SHIFT+LINE_BITS  # type: Final
+COL_MASK = (1<<COL_BITS)-1  # type: Final
+
+
+
 class Context:
     """Base type for objects that are valid as error message locations."""
-    __slots__ = ('line', 'column', 'end_line')
+    __slots__ = ("_val",)
 
     def __init__(self, line: int = -1, column: int = -1) -> None:
-        self.line = line
-        self.column = column
-        self.end_line = None  # type: Optional[int]
+        self._val = (min(line, 100000) + 1) | ((min(column, 4000) + 1) << COL_SHIFT)
+
+    @property
+    def line(self) -> int:
+        return (self._val & LINE_MASK) - 1
+
+    @line.setter
+    def line(self, line: int) -> None:
+        line = min(line, 100000) + 1
+        val = self._val
+        self._val = (val & ~LINE_MASK) | line
+
+    @property
+    def end_line(self) -> Optional[int]:
+        end_tweaked = (self._val >> END_LINE_SHIFT) & LINE_MASK
+        if not end_tweaked:
+            return None
+        return end_tweaked - 2
+
+    @line.setter
+    def end_line(self, line: Optional[int]) -> None:
+        line = 0 if line is None else min(line, 100000) + 2  # XXX: CLAMP
+        val = self._val
+        self._val = (val & ~(LINE_MASK << END_LINE_SHIFT)) | (line << END_LINE_SHIFT)
+
+    @property
+    def column(self) -> int:
+        return ((self._val >> COL_SHIFT) & COL_MASK) - 1
+
+    @column.setter
+    def column(self, col: int) -> None:
+        col = min(col, 4000) + 1
+        val = self._val
+        self._val = (val & ~(COL_MASK << COL_SHIFT)) | (col << COL_SHIFT)
 
     def set_line(self,
                  target: Union['Context', int],
@@ -36,9 +77,7 @@ class Context:
         if isinstance(target, int):
             self.line = target
         else:
-            self.line = target.line
-            self.column = target.column
-            self.end_line = target.end_line
+            self._val = target._val
 
         if column is not None:
             self.column = column
@@ -2752,7 +2791,7 @@ class TypeAlias(SymbolNode):
     line and column: Line an column on the original alias definition.
     """
     __slots__ = ('target', '_fullname', 'alias_tvars', 'no_args', 'normalized',
-                 'line', 'column', '_is_recursive')
+                 '_is_recursive')
 
     def __init__(self, target: 'mypy.types.Type', fullname: str, line: int, column: int,
                  *,
@@ -2859,10 +2898,10 @@ class PlaceholderNode(SymbolNode):
 
     def __init__(self, fullname: str, node: Node, line: int, *,
                  becomes_typeinfo: bool = False) -> None:
+        super().__init__(line)
         self._fullname = fullname
         self.node = node
         self.becomes_typeinfo = becomes_typeinfo
-        self.line = line
 
     @property
     def name(self) -> str:
