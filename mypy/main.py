@@ -25,7 +25,7 @@ from mypy.split_namespace import SplitNamespace
 from mypy.version import __version__
 
 orig_stat = os.stat  # type: Final
-MEM_PROFILE = False  # type: Final  # If True, dump memory profile
+MEM_PROFILE = True  # type: Final  # If True, dump memory profile
 
 
 def stat_proxy(path: str) -> os.stat_result:
