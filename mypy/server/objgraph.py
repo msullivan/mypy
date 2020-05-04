@@ -55,9 +55,8 @@ def isproperty(o: object, attr: str) -> bool:
 
 def get_edge_candidates(o: object) -> Iterator[Tuple[object, object]]:
     # use getattr because mypyc expects dict, not mappingproxy
-    if '__getattribute__' in getattr(type(o), '__dict__'):  # noqa
-        return
-    if type(o) not in COLLECTION_TYPE_BLACKLIST:
+    has_getattribute = '__getattribute__' in getattr(type(o), '__dict__')  # noqa
+    if type(o) not in COLLECTION_TYPE_BLACKLIST and not has_getattribute:
         for attr in dir(o):
             try:
                 if attr not in ATTR_BLACKLIST and hasattr(o, attr) and not isproperty(o, attr):
@@ -69,7 +68,7 @@ def get_edge_candidates(o: object) -> Iterator[Tuple[object, object]]:
     if isinstance(o, Mapping):
         for k, v in o.items():
             yield k, v
-    elif isinstance(o, Iterable) and not isinstance(o, str):
+    elif isinstance(o, Iterable) and not isinstance(o, str) and not hasattr(o, 'read'):
         for i, e in enumerate(o):
             yield i, e
 
@@ -95,15 +94,20 @@ def get_reachable_graph(root: object) -> Tuple[Dict[int, object],
                                                Dict[int, Tuple[int, object]]]:
     parents = {}
     seen = {id(root): root}
-    worklist = [root]
+    dists = {id(root): 0}
+    worklist = [(root, 0)]
     while worklist:
-        o = worklist.pop()
+        o, dist = worklist.pop()
         for s, e in get_edges(o):
-            if id(e) in seen:
-                continue
+            if id(e) not in seen:
+                worklist.append((e, dist+1))
+            else:
+                if dists[id(e)] <= dist+1:
+                    continue
+
             parents[id(e)] = (id(o), s)
             seen[id(e)] = e
-            worklist.append(e)
+            dists[id(e)] = dist + 1
 
     return seen, parents
 

@@ -469,6 +469,7 @@ class SemanticAnalyzer(NodeVisitor[None],
         scope.enter_file(self.cur_mod_id)
         self.is_stub_file = file_node.path.lower().endswith('.pyi')
         self._is_typeshed_stub_file = is_typeshed_file(file_node.path)
+        old_globals = self.globals
         self.globals = file_node.names
         self.tvar_scope = TypeVarScope()
 
@@ -495,6 +496,7 @@ class SemanticAnalyzer(NodeVisitor[None],
             self.type = None
         scope.leave()
         del self.options
+        self.globals = old_globals
 
     #
     # Functions

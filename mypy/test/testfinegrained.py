@@ -38,7 +38,7 @@ from mypy.find_sources import create_source_list
 import pytest  # type: ignore  # no pytest in typeshed
 
 # Set to True to perform (somewhat expensive) checks for duplicate AST nodes after merge
-CHECK_CONSISTENCY = False
+CHECK_CONSISTENCY = True
 
 
 class FineGrainedSuite(DataSuite):
@@ -102,6 +102,12 @@ class FineGrainedSuite(DataSuite):
         a.extend(self.maybe_suggest(step, server, main_src, testcase.tmpdir.name))
 
         if server.fine_grained_manager:
+            try:
+                del server.fine_grained_manager.manager.semantic_analyzer.globals
+            except AttributeError:
+                pass
+            server.fine_grained_manager.manager.semantic_analyzer.globals = None
+
             if CHECK_CONSISTENCY:
                 check_consistency(server.fine_grained_manager)
 
@@ -229,6 +235,10 @@ class FineGrainedSuite(DataSuite):
         targets = []  # type: List[str]
         triggered = []
         if server.fine_grained_manager:
+            try:
+                del server.fine_grained_manager.manager.semantic_analyzer.globals
+            except AttributeError:
+                pass
             if CHECK_CONSISTENCY:
                 check_consistency(server.fine_grained_manager)
             triggered.append(server.fine_grained_manager.triggered)

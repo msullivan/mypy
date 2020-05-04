@@ -51,7 +51,7 @@ from mypy.nodes import (
     MypyFile, SymbolTable, Block, AssignmentStmt, NameExpr, MemberExpr, RefExpr, TypeInfo,
     FuncDef, ClassDef, NamedTupleExpr, SymbolNode, Var, Statement, SuperExpr, NewTypeExpr,
     OverloadedFuncDef, LambdaExpr, TypedDictExpr, EnumCallExpr, FuncBase, TypeAliasExpr, CallExpr,
-    CastExpr, TypeAlias,
+    CastExpr, IndexExpr, TypeAlias, Decorator, TypeApplication, TypeVarExpr,
     MDEF
 )
 from mypy.traverser import TraverserVisitor
@@ -159,13 +159,24 @@ class NodeReplaceVisitor(TraverserVisitor):
         node.body = self.replace_statements(node.body)
 
     def visit_func_def(self, node: FuncDef) -> None:
-        node = self.fixup(node)
         self.process_base_func(node)
+        for i, item in enumerate(node.expanded):
+            if item is not node:
+                item.accept(self)
+            node.expanded[i] = self.fixup(item)
         super().visit_func_def(node)
 
     def visit_overloaded_func_def(self, node: OverloadedFuncDef) -> None:
         self.process_base_func(node)
+        for i, item in enumerate(node.unanalyzed_items):
+            item.accept(self)
+            node.unanalyzed_items[i] = self.fixup(item)
         super().visit_overloaded_func_def(node)
+
+    def visit_decorator(self, node: Decorator) -> None:
+        for decorator in node.original_decorators:
+            decorator.accept(self)
+        super().visit_decorator(node)
 
     def visit_class_def(self, node: ClassDef) -> None:
         # TODO additional things?
@@ -179,6 +190,8 @@ class NodeReplaceVisitor(TraverserVisitor):
                 self.process_synthetic_type_info(info)
             else:
                 self.process_type_info(info)
+        for base in node.removed_base_type_exprs:
+            base.accept(self)
         super().visit_class_def(node)
 
     def process_base_func(self, node: FuncBase) -> None:
@@ -234,6 +247,11 @@ class NodeReplaceVisitor(TraverserVisitor):
         if isinstance(node.analyzed, SymbolNode):
             node.analyzed = self.fixup(node.analyzed)
 
+    def visit_index_expr(self, node: IndexExpr) -> None:
+        super().visit_index_expr(node)
+        if isinstance(node.analyzed, SymbolNode):
+            node.analyzed = self.fixup(node.analyzed)
+
     def visit_newtype_expr(self, node: NewTypeExpr) -> None:
         if node.info:
             node.info = self.fixup_and_reset_typeinfo(node.info)
@@ -255,9 +273,20 @@ class NodeReplaceVisitor(TraverserVisitor):
         self.process_synthetic_type_info(node.info)
         super().visit_enum_call_expr(node)
 
+    def visit_type_var_expr(self, node: TypeVarExpr) -> None:
+        for typ in node.values:
+            self.fixup_type(typ)
+        self.fixup_type(node.upper_bound)
+
     def visit_type_alias_expr(self, node: TypeAliasExpr) -> None:
         self.fixup_type(node.type)
         super().visit_type_alias_expr(node)
+        node.node = self.fixup(node.node)
+
+    def visit_type_application(self, node: TypeApplication) -> None:
+        super().visit_type_application(node)
+        for type in node.types:
+            self.fixup_type(type)
 
     # Others
 

@@ -548,6 +548,11 @@ def update_module_isolated(module: str,
         restore([module] + [st.id for st in new_modules])
         return BlockedUpdate(err.module_with_blocker, path, [], err.messages)
 
+    # ASDF:
+    for st in graph.values():
+        if st.caller_state:
+            st.caller_state = graph.get(st.caller_state.id)
+
     # Reparsing the file may have brought in dependencies that we
     # didn't have before. Make sure that they are loaded to restore
     # the invariant that a module having a loaded tree implies that

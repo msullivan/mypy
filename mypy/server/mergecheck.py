@@ -3,7 +3,7 @@
 from typing import Dict, List, Tuple
 from typing_extensions import Final
 
-from mypy.nodes import FakeInfo, SymbolNode, Var, Decorator, FuncDef
+from mypy.nodes import FakeInfo, SymbolNode, Var, Decorator, FuncDef, FuncItem
 from mypy.server.objgraph import get_reachable_graph, get_path
 
 # If True, print more verbose output on failure.
@@ -20,6 +20,7 @@ def check_consistency(o: object) -> None:
     syms = [x for x in reachable if isinstance(x, SymbolNode)]
 
     m = {}  # type: Dict[str, SymbolNode]
+    failed = False
     for sym in syms:
         if isinstance(sym, FakeInfo):
             continue
@@ -46,10 +47,19 @@ def check_consistency(o: object) -> None:
         if type(sym1) is not type(sym2):
             continue
 
+        if (
+            isinstance(sym1, FuncItem)
+            and isinstance(sym2, FuncItem)
+            and (sym1 in sym2.expanded or sym2 in sym1.expanded)
+        ):
+            continue
+
         path1 = get_path(sym1, seen, parents)
         path2 = get_path(sym2, seen, parents)
 
         if fn in m:
+            failed = True
+
             print('\nDuplicate %r nodes with fullname %r found:' % (type(sym).__name__, fn))
             print('[1] %d: %s' % (id(sym1), path_to_str(path1)))
             print('[2] %d: %s' % (id(sym2), path_to_str(path2)))
@@ -61,8 +71,7 @@ def check_consistency(o: object) -> None:
             print('---')
             print(id(sym2), sym2)
 
-        assert sym.fullname not in m
-
+    assert not failed
 
 def path_to_str(path: List[Tuple[object, object]]) -> str:
     result = '<root>'
