@@ -147,6 +147,9 @@ from mypy.server.target import trigger_to_target
 from mypy.server.trigger import make_trigger, WILDCARD_TAG
 from mypy.util import module_prefix, split_target
 from mypy.typestate import TypeState
+from mypy.freetree import free_tree
+
+from collections import OrderedDict
 
 MAX_ITER = 1000  # type: Final
 
@@ -189,6 +192,12 @@ class FineGrainedBuildManager:
         self.updated_modules = []  # type: List[str]
         # Targets processed during last update (for testing only).
         self.processed_targets = []  # type: List[str]
+
+        self.max_trees = 2
+        self.lru_modules = OrderedDict(
+            (id, None) for id, st in self.graph.items()
+            if st.tree and not st.tree.is_cache_skeleton
+        )
 
     def update(self,
                changed_modules: List[Tuple[str, str]],
@@ -269,6 +278,10 @@ class FineGrainedBuildManager:
                     messages = self.manager.errors.new_messages()
                     break
 
+            self.evict_trees()
+
+        self.evict_trees()
+
         self.previous_messages = messages[:]
         return messages
 
@@ -285,6 +298,30 @@ class FineGrainedBuildManager:
         self.previous_targets_with_errors = self.manager.errors.targets()
         self.previous_messages = self.manager.errors.new_messages()[:]
         return self.update(changed_modules, [])
+
+    def mark_lru_updated(self, id: str) -> None:
+        if id in self.graph and self.graph[id].tree:
+            self.lru_modules[id] = None
+            self.lru_modules.move_to_end(id)
+
+    def evict_trees(self) -> None:
+        if not self.max_trees:
+            return
+
+        while len(self.lru_modules) > self.max_trees:
+            id, _ = self.lru_modules.popitem(last=False)
+            prefix = id + '.'
+            if (
+                id in self.graph
+                and id not in self.previous_targets_with_errors
+                # XXX: slow?
+                and not any(t.startswith(prefix) for t in self.previous_targets_with_errors)
+            ):
+                st = self.graph[id]
+                if '/typeshed/' in st.xpath or '/lib-stub/' in st.xpath:
+                    continue
+                assert st.tree is not None
+                free_tree(st.tree)
 
     def update_one(self,
                    changed_modules: List[Tuple[str, str]],
@@ -308,6 +345,9 @@ class FineGrainedBuildManager:
             return changed_modules, (next_id, next_path), None
         result = self.update_module(next_id, next_path, next_id in removed_set)
         remaining, (next_id, next_path), blocker_messages = result
+        for id, _ in remaining:
+            self.mark_lru_updated(id)
+        self.mark_lru_updated(next_id)
         changed_modules = [(id, path) for id, path in changed_modules
                            if id != next_id]
         changed_modules = dedupe_modules(remaining + changed_modules)

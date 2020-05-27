@@ -19,3 +19,4 @@ def free_tree(tree: MypyFile) -> None:
     """
     tree.accept(TreeFreer())
     tree.defs.clear()
+    tree.is_cache_skeleton = True
