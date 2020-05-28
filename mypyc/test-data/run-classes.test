@@ -1424,3 +1424,15 @@ with patch("interp.Bar.spam", lambda self: 20):
 
 with assertRaises(TypeError, "int object expected; got str"):
     y.x = "test"
+
+[case testForwardClass]
+from testutil import assertRaises
+with assertRaises(NameError, "name 'A' is not defined"):
+    a = A
+with assertRaises(NameError, "constructing class 'A' before it is initialized"):
+    A()
+
+class A:
+    pass
+[file driver.py]
+import native

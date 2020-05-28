@@ -485,7 +485,7 @@ class LowLevelIRBuilder:
 
     def load_native_type_object(self, fullname: str) -> Value:
         module, name = fullname.rsplit('.', 1)
-        return self.add(LoadStatic(object_rprimitive, name, module, NAMESPACE_TYPE))
+        return self.load_static_checked(object_rprimitive, name, module, NAMESPACE_TYPE)
 
     # Other primitive operations
 

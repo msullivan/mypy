@@ -431,6 +431,14 @@ def generate_setup_for_class(cl: ClassIR,
     emitter.emit_line('{}(PyTypeObject *type)'.format(func_name))
     emitter.emit_line('{')
     emitter.emit_line('{} *self;'.format(cl.struct_name(emitter.names)))
+
+    emitter.emit_line('if (unlikely(type == NULL)) {')
+    emitter.emit_line(
+        'PyErr_SetString(PyExc_NameError, "constructing class \'{}\' before it is initialized");'.
+        format(cl.name))
+    emitter.emit_line('return NULL;')
+    emitter.emit_line('}')
+
     emitter.emit_line('self = ({struct} *)type->tp_alloc(type, 0);'.format(
         struct=cl.struct_name(emitter.names)))
     emitter.emit_line('if (self == NULL)')
