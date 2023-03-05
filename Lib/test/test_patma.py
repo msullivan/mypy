@@ -2668,6 +2668,48 @@ class TestPatma(unittest.TestCase):
         setattr(c, "__attr", "spam")  # setattr is needed because we're in a class scope
         self.assertEqual(Outer().f(c), "spam")
 
+    def test_patma_250(self):
+        def plus1(n):
+            if n < 0:
+                raise StopIteration  # ... probably not the right thing.
+            return n + 1
+
+        def f(n):
+            x = y = None
+            match n:
+                case plus1 -> 10:
+                    x = 0
+                case plus1 -> 11:
+                    x = 1
+                case plus1 -> z as z2:
+                    x = 2
+                    y = z, z2
+            return x, y
+
+        self.assertEqual(f(10), (1, None))
+        self.assertEqual(f(11), (2, (12, 11)))
+        self.assertEqual(f(-10), (None, None))
+
+    def test_patma_251(self):
+        # Cheesy but trivial example. Emulate "n+k" patterns.
+        # TODO: Add more view pattern examples, including some
+        # that mirror some useful case.
+        def plusk(k):
+            def f(n):
+                if n < k:
+                    raise StopIteration
+                return n - k
+            return f
+
+        def fact(n):
+            match n:
+                case plusk(1) -> m:
+                    return fact(m) * (m+1)
+                case 0:
+                    return 1
+
+        self.assertEqual(fact(5), 120)
+
 
 class TestSyntaxErrors(unittest.TestCase):
 

@@ -114,6 +114,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->MatchSingleton_type);
     Py_CLEAR(state->MatchStar_type);
     Py_CLEAR(state->MatchValue_type);
+    Py_CLEAR(state->MatchView_type);
     Py_CLEAR(state->Match_type);
     Py_CLEAR(state->Mod_singleton);
     Py_CLEAR(state->Mod_type);
@@ -744,6 +745,10 @@ static const char * const MatchClass_fields[]={
 };
 static const char * const MatchStar_fields[]={
     "name",
+};
+static const char * const MatchView_fields[]={
+    "func",
+    "pattern",
 };
 static const char * const MatchAs_fields[]={
     "pattern",
@@ -1794,6 +1799,7 @@ init_types(struct ast_state *state)
         "        | MatchMapping(expr* keys, pattern* patterns, identifier? rest)\n"
         "        | MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)\n"
         "        | MatchStar(identifier? name)\n"
+        "        | MatchView(expr func, pattern pattern)\n"
         "        | MatchAs(pattern? pattern, identifier? name)\n"
         "        | MatchOr(pattern* patterns)");
     if (!state->pattern_type) return 0;
@@ -1832,6 +1838,10 @@ init_types(struct ast_state *state)
     if (!state->MatchStar_type) return 0;
     if (PyObject_SetAttr(state->MatchStar_type, state->name, Py_None) == -1)
         return 0;
+    state->MatchView_type = make_type(state, "MatchView", state->pattern_type,
+                                      MatchView_fields, 2,
+        "MatchView(expr func, pattern pattern)");
+    if (!state->MatchView_type) return 0;
     state->MatchAs_type = make_type(state, "MatchAs", state->pattern_type,
                                     MatchAs_fields, 2,
         "MatchAs(pattern? pattern, identifier? name)");
@@ -3546,6 +3556,34 @@ _PyAST_MatchStar(identifier name, int lineno, int col_offset, int end_lineno,
         return NULL;
     p->kind = MatchStar_kind;
     p->v.MatchStar.name = name;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
+pattern_ty
+_PyAST_MatchView(expr_ty func, pattern_ty pattern, int lineno, int col_offset,
+                 int end_lineno, int end_col_offset, PyArena *arena)
+{
+    pattern_ty p;
+    if (!func) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'func' is required for MatchView");
+        return NULL;
+    }
+    if (!pattern) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'pattern' is required for MatchView");
+        return NULL;
+    }
+    p = (pattern_ty)_PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = MatchView_kind;
+    p->v.MatchView.func = func;
+    p->v.MatchView.pattern = pattern;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -5344,6 +5382,21 @@ ast2obj_pattern(struct ast_state *state, void* _o)
         value = ast2obj_identifier(state, o->v.MatchStar.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case MatchView_kind:
+        tp = (PyTypeObject *)state->MatchView_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(state, o->v.MatchView.func);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->func, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_pattern(state, o->v.MatchView.pattern);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->pattern, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -11632,6 +11685,54 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         if (*out == NULL) goto failed;
         return 0;
     }
+    tp = state->MatchView_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        expr_ty func;
+        pattern_ty pattern;
+
+        if (_PyObject_LookupAttr(obj, state->func, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"func\" missing from MatchView");
+            return 1;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'MatchView' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &func, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (_PyObject_LookupAttr(obj, state->pattern, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"pattern\" missing from MatchView");
+            return 1;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'MatchView' node")) {
+                goto failed;
+            }
+            res = obj2ast_pattern(state, tmp, &pattern, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_MatchView(func, pattern, lineno, col_offset, end_lineno,
+                                end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
     tp = state->MatchAs_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
@@ -12174,6 +12275,9 @@ astmodule_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddObjectRef(m, "MatchStar", state->MatchStar_type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "MatchView", state->MatchView_type) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "MatchAs", state->MatchAs_type) < 0) {

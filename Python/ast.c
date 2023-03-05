@@ -635,6 +635,13 @@ validate_pattern(struct validator *state, pattern_ty p, int star_ok)
             }
             ret = p->v.MatchStar.name == NULL || validate_capture(p->v.MatchStar.name);
             break;
+        case MatchView_kind:
+            if (!validate_expr(state, p->v.MatchView.func, Load)) {
+                ret = 0;
+                break;
+            }
+			ret = validate_pattern(state, p->v.MatchView.pattern, /*star_ok=*/0);
+            break;
         case MatchAs_kind:
             if (p->v.MatchAs.name && !validate_capture(p->v.MatchAs.name)) {
                 ret = 0;

@@ -6207,6 +6207,27 @@ compiler_pattern_subpattern(struct compiler *c,
 }
 
 static int
+compiler_pattern_view(struct compiler *c, pattern_ty p, pattern_context *pc)
+{
+    assert(p->kind == MatchView_kind);
+
+	VISIT(c, expr, p->v.MatchView.func);
+    ADDOP(c, LOC(p), MATCH_VIEW);
+    // TOS is the new subject (or None), then True/False for match success
+    // XXX: Is this the best way to do it?
+    pc->on_top++;
+    RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+    pc->on_top--;
+
+    if (WILDCARD_CHECK(p->v.MatchView.pattern)) {
+        ADDOP(c, LOC(p), POP_TOP);
+    } else {
+        RETURN_IF_ERROR(compiler_pattern_subpattern(c, p->v.MatchView.pattern, pc));
+    }
+    return SUCCESS;
+}
+
+static int
 compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchAs_kind);
@@ -6715,6 +6736,8 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
             return compiler_pattern_class(c, p, pc);
         case MatchStar_kind:
             return compiler_pattern_star(c, p, pc);
+        case MatchView_kind:
+            return compiler_pattern_view(c, p, pc);
         case MatchAs_kind:
             return compiler_pattern_as(c, p, pc);
         case MatchOr_kind:

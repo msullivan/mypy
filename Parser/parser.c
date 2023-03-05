@@ -147,418 +147,419 @@ static char *soft_keywords[] = {
 #define pattern_type 1067
 #define as_pattern_type 1068
 #define or_pattern_type 1069
-#define closed_pattern_type 1070
-#define literal_pattern_type 1071
-#define literal_expr_type 1072
-#define complex_number_type 1073
-#define signed_number_type 1074
-#define signed_real_number_type 1075
-#define real_number_type 1076
-#define imaginary_number_type 1077
-#define capture_pattern_type 1078
-#define pattern_capture_target_type 1079
-#define wildcard_pattern_type 1080
-#define value_pattern_type 1081
-#define attr_type 1082  // Left-recursive
-#define name_or_attr_type 1083  // Left-recursive
-#define group_pattern_type 1084
-#define sequence_pattern_type 1085
-#define open_sequence_pattern_type 1086
-#define maybe_sequence_pattern_type 1087
-#define maybe_star_pattern_type 1088
-#define star_pattern_type 1089
-#define mapping_pattern_type 1090
-#define items_pattern_type 1091
-#define key_value_pattern_type 1092
-#define double_star_pattern_type 1093
-#define class_pattern_type 1094
-#define positional_patterns_type 1095
-#define keyword_patterns_type 1096
-#define keyword_pattern_type 1097
-#define expressions_type 1098
-#define expression_type 1099
-#define yield_expr_type 1100
-#define star_expressions_type 1101
-#define star_expression_type 1102
-#define star_named_expressions_type 1103
-#define star_named_expression_type 1104
-#define assignment_expression_type 1105
-#define named_expression_type 1106
-#define disjunction_type 1107
-#define conjunction_type 1108
-#define inversion_type 1109
-#define comparison_type 1110
-#define compare_op_bitwise_or_pair_type 1111
-#define eq_bitwise_or_type 1112
-#define noteq_bitwise_or_type 1113
-#define lte_bitwise_or_type 1114
-#define lt_bitwise_or_type 1115
-#define gte_bitwise_or_type 1116
-#define gt_bitwise_or_type 1117
-#define notin_bitwise_or_type 1118
-#define in_bitwise_or_type 1119
-#define isnot_bitwise_or_type 1120
-#define is_bitwise_or_type 1121
-#define bitwise_or_type 1122  // Left-recursive
-#define bitwise_xor_type 1123  // Left-recursive
-#define bitwise_and_type 1124  // Left-recursive
-#define shift_expr_type 1125  // Left-recursive
-#define sum_type 1126  // Left-recursive
-#define term_type 1127  // Left-recursive
-#define factor_type 1128
-#define power_type 1129
-#define await_primary_type 1130
-#define primary_type 1131  // Left-recursive
-#define slices_type 1132
-#define slice_type 1133
-#define atom_type 1134
-#define group_type 1135
-#define lambdef_type 1136
-#define lambda_params_type 1137
-#define lambda_parameters_type 1138
-#define lambda_slash_no_default_type 1139
-#define lambda_slash_with_default_type 1140
-#define lambda_star_etc_type 1141
-#define lambda_kwds_type 1142
-#define lambda_param_no_default_type 1143
-#define lambda_param_with_default_type 1144
-#define lambda_param_maybe_default_type 1145
-#define lambda_param_type 1146
-#define strings_type 1147
-#define list_type 1148
-#define tuple_type 1149
-#define set_type 1150
-#define dict_type 1151
-#define double_starred_kvpairs_type 1152
-#define double_starred_kvpair_type 1153
-#define kvpair_type 1154
-#define for_if_clauses_type 1155
-#define for_if_clause_type 1156
-#define listcomp_type 1157
-#define setcomp_type 1158
-#define genexp_type 1159
-#define dictcomp_type 1160
-#define arguments_type 1161
-#define args_type 1162
-#define kwargs_type 1163
-#define starred_expression_type 1164
-#define kwarg_or_starred_type 1165
-#define kwarg_or_double_starred_type 1166
-#define star_targets_type 1167
-#define star_targets_list_seq_type 1168
-#define star_targets_tuple_seq_type 1169
-#define star_target_type 1170
-#define target_with_star_atom_type 1171
-#define star_atom_type 1172
-#define single_target_type 1173
-#define single_subscript_attribute_target_type 1174
-#define t_primary_type 1175  // Left-recursive
-#define t_lookahead_type 1176
-#define del_targets_type 1177
-#define del_target_type 1178
-#define del_t_atom_type 1179
-#define type_expressions_type 1180
-#define func_type_comment_type 1181
-#define invalid_arguments_type 1182
-#define invalid_kwarg_type 1183
-#define expression_without_invalid_type 1184
-#define invalid_legacy_expression_type 1185
-#define invalid_expression_type 1186
-#define invalid_named_expression_type 1187
-#define invalid_assignment_type 1188
-#define invalid_ann_assign_target_type 1189
-#define invalid_del_stmt_type 1190
-#define invalid_block_type 1191
-#define invalid_comprehension_type 1192
-#define invalid_dict_comprehension_type 1193
-#define invalid_parameters_type 1194
-#define invalid_default_type 1195
-#define invalid_star_etc_type 1196
-#define invalid_kwds_type 1197
-#define invalid_parameters_helper_type 1198
-#define invalid_lambda_parameters_type 1199
-#define invalid_lambda_parameters_helper_type 1200
-#define invalid_lambda_star_etc_type 1201
-#define invalid_lambda_kwds_type 1202
-#define invalid_double_type_comments_type 1203
-#define invalid_with_item_type 1204
-#define invalid_for_target_type 1205
-#define invalid_group_type 1206
-#define invalid_import_type 1207
-#define invalid_import_from_targets_type 1208
-#define invalid_with_stmt_type 1209
-#define invalid_with_stmt_indent_type 1210
-#define invalid_try_stmt_type 1211
-#define invalid_except_stmt_type 1212
-#define invalid_finally_stmt_type 1213
-#define invalid_except_stmt_indent_type 1214
-#define invalid_except_star_stmt_indent_type 1215
-#define invalid_match_stmt_type 1216
-#define invalid_case_block_type 1217
-#define invalid_as_pattern_type 1218
-#define invalid_class_pattern_type 1219
-#define invalid_class_argument_pattern_type 1220
-#define invalid_if_stmt_type 1221
-#define invalid_elif_stmt_type 1222
-#define invalid_else_stmt_type 1223
-#define invalid_while_stmt_type 1224
-#define invalid_for_stmt_type 1225
-#define invalid_def_raw_type 1226
-#define invalid_class_def_raw_type 1227
-#define invalid_double_starred_kvpairs_type 1228
-#define invalid_kvpair_type 1229
-#define invalid_starred_expression_type 1230
-#define _loop0_1_type 1231
-#define _loop0_2_type 1232
-#define _loop1_3_type 1233
-#define _loop0_5_type 1234
-#define _gather_4_type 1235
-#define _tmp_6_type 1236
-#define _tmp_7_type 1237
-#define _tmp_8_type 1238
-#define _tmp_9_type 1239
-#define _tmp_10_type 1240
-#define _tmp_11_type 1241
-#define _tmp_12_type 1242
-#define _tmp_13_type 1243
-#define _loop1_14_type 1244
-#define _tmp_15_type 1245
-#define _tmp_16_type 1246
-#define _tmp_17_type 1247
-#define _loop0_19_type 1248
-#define _gather_18_type 1249
-#define _loop0_21_type 1250
-#define _gather_20_type 1251
-#define _tmp_22_type 1252
-#define _tmp_23_type 1253
-#define _loop0_24_type 1254
-#define _loop1_25_type 1255
-#define _loop0_27_type 1256
-#define _gather_26_type 1257
-#define _tmp_28_type 1258
-#define _loop0_30_type 1259
-#define _gather_29_type 1260
-#define _tmp_31_type 1261
-#define _loop1_32_type 1262
-#define _tmp_33_type 1263
-#define _tmp_34_type 1264
-#define _tmp_35_type 1265
-#define _loop0_36_type 1266
-#define _loop0_37_type 1267
-#define _loop0_38_type 1268
-#define _loop1_39_type 1269
-#define _loop0_40_type 1270
-#define _loop1_41_type 1271
-#define _loop1_42_type 1272
-#define _loop1_43_type 1273
-#define _loop0_44_type 1274
-#define _loop1_45_type 1275
-#define _loop0_46_type 1276
-#define _loop1_47_type 1277
-#define _loop0_48_type 1278
-#define _loop0_49_type 1279
-#define _loop1_50_type 1280
-#define _loop0_52_type 1281
-#define _gather_51_type 1282
-#define _loop0_54_type 1283
-#define _gather_53_type 1284
-#define _loop0_56_type 1285
-#define _gather_55_type 1286
-#define _loop0_58_type 1287
-#define _gather_57_type 1288
-#define _tmp_59_type 1289
-#define _loop1_60_type 1290
-#define _loop1_61_type 1291
-#define _tmp_62_type 1292
-#define _tmp_63_type 1293
-#define _loop1_64_type 1294
-#define _loop0_66_type 1295
-#define _gather_65_type 1296
-#define _tmp_67_type 1297
-#define _tmp_68_type 1298
-#define _tmp_69_type 1299
-#define _tmp_70_type 1300
-#define _loop0_72_type 1301
-#define _gather_71_type 1302
-#define _loop0_74_type 1303
-#define _gather_73_type 1304
-#define _tmp_75_type 1305
-#define _loop0_77_type 1306
-#define _gather_76_type 1307
-#define _loop0_79_type 1308
-#define _gather_78_type 1309
-#define _loop1_80_type 1310
-#define _loop1_81_type 1311
-#define _loop0_83_type 1312
-#define _gather_82_type 1313
-#define _loop1_84_type 1314
-#define _loop1_85_type 1315
-#define _loop1_86_type 1316
-#define _tmp_87_type 1317
-#define _loop0_89_type 1318
-#define _gather_88_type 1319
-#define _tmp_90_type 1320
-#define _tmp_91_type 1321
-#define _tmp_92_type 1322
-#define _tmp_93_type 1323
-#define _tmp_94_type 1324
-#define _loop0_95_type 1325
-#define _loop0_96_type 1326
-#define _loop0_97_type 1327
-#define _loop1_98_type 1328
-#define _loop0_99_type 1329
-#define _loop1_100_type 1330
-#define _loop1_101_type 1331
-#define _loop1_102_type 1332
-#define _loop0_103_type 1333
-#define _loop1_104_type 1334
-#define _loop0_105_type 1335
-#define _loop1_106_type 1336
-#define _loop0_107_type 1337
-#define _loop1_108_type 1338
-#define _loop1_109_type 1339
-#define _tmp_110_type 1340
-#define _loop0_112_type 1341
-#define _gather_111_type 1342
-#define _loop1_113_type 1343
-#define _loop0_114_type 1344
-#define _loop0_115_type 1345
-#define _tmp_116_type 1346
-#define _loop0_118_type 1347
-#define _gather_117_type 1348
-#define _tmp_119_type 1349
-#define _loop0_121_type 1350
-#define _gather_120_type 1351
-#define _loop0_123_type 1352
-#define _gather_122_type 1353
-#define _loop0_125_type 1354
-#define _gather_124_type 1355
-#define _loop0_127_type 1356
-#define _gather_126_type 1357
-#define _loop0_128_type 1358
-#define _loop0_130_type 1359
-#define _gather_129_type 1360
-#define _loop1_131_type 1361
-#define _tmp_132_type 1362
-#define _loop0_134_type 1363
-#define _gather_133_type 1364
-#define _loop0_136_type 1365
-#define _gather_135_type 1366
-#define _loop0_138_type 1367
-#define _gather_137_type 1368
-#define _loop0_140_type 1369
-#define _gather_139_type 1370
-#define _loop0_142_type 1371
-#define _gather_141_type 1372
-#define _tmp_143_type 1373
-#define _tmp_144_type 1374
-#define _tmp_145_type 1375
-#define _tmp_146_type 1376
-#define _tmp_147_type 1377
-#define _tmp_148_type 1378
-#define _tmp_149_type 1379
-#define _tmp_150_type 1380
-#define _tmp_151_type 1381
-#define _tmp_152_type 1382
-#define _tmp_153_type 1383
-#define _loop0_154_type 1384
-#define _loop0_155_type 1385
-#define _loop0_156_type 1386
-#define _tmp_157_type 1387
-#define _tmp_158_type 1388
-#define _tmp_159_type 1389
-#define _tmp_160_type 1390
-#define _tmp_161_type 1391
-#define _loop0_162_type 1392
-#define _loop0_163_type 1393
-#define _loop0_164_type 1394
-#define _loop1_165_type 1395
-#define _tmp_166_type 1396
-#define _loop0_167_type 1397
-#define _tmp_168_type 1398
-#define _loop0_169_type 1399
-#define _loop1_170_type 1400
-#define _tmp_171_type 1401
-#define _tmp_172_type 1402
-#define _tmp_173_type 1403
-#define _loop0_174_type 1404
-#define _tmp_175_type 1405
-#define _tmp_176_type 1406
-#define _loop1_177_type 1407
-#define _tmp_178_type 1408
-#define _loop0_179_type 1409
-#define _loop0_180_type 1410
-#define _loop0_181_type 1411
-#define _loop0_183_type 1412
-#define _gather_182_type 1413
-#define _tmp_184_type 1414
-#define _loop0_185_type 1415
-#define _tmp_186_type 1416
-#define _loop0_187_type 1417
-#define _loop1_188_type 1418
-#define _loop1_189_type 1419
-#define _tmp_190_type 1420
-#define _tmp_191_type 1421
-#define _loop0_192_type 1422
-#define _tmp_193_type 1423
-#define _tmp_194_type 1424
-#define _tmp_195_type 1425
-#define _loop0_197_type 1426
-#define _gather_196_type 1427
-#define _loop0_199_type 1428
-#define _gather_198_type 1429
-#define _loop0_201_type 1430
-#define _gather_200_type 1431
-#define _loop0_203_type 1432
-#define _gather_202_type 1433
-#define _tmp_204_type 1434
-#define _loop0_205_type 1435
-#define _loop1_206_type 1436
-#define _tmp_207_type 1437
-#define _loop0_208_type 1438
-#define _loop1_209_type 1439
-#define _tmp_210_type 1440
-#define _tmp_211_type 1441
-#define _tmp_212_type 1442
-#define _tmp_213_type 1443
-#define _tmp_214_type 1444
-#define _tmp_215_type 1445
-#define _tmp_216_type 1446
-#define _tmp_217_type 1447
-#define _tmp_218_type 1448
-#define _tmp_219_type 1449
-#define _loop0_221_type 1450
-#define _gather_220_type 1451
-#define _tmp_222_type 1452
-#define _tmp_223_type 1453
-#define _tmp_224_type 1454
-#define _tmp_225_type 1455
-#define _tmp_226_type 1456
-#define _tmp_227_type 1457
-#define _tmp_228_type 1458
-#define _tmp_229_type 1459
-#define _tmp_230_type 1460
-#define _tmp_231_type 1461
-#define _tmp_232_type 1462
-#define _tmp_233_type 1463
-#define _tmp_234_type 1464
-#define _tmp_235_type 1465
-#define _tmp_236_type 1466
-#define _tmp_237_type 1467
-#define _tmp_238_type 1468
-#define _tmp_239_type 1469
-#define _tmp_240_type 1470
-#define _tmp_241_type 1471
-#define _tmp_242_type 1472
-#define _tmp_243_type 1473
-#define _tmp_244_type 1474
-#define _tmp_245_type 1475
-#define _tmp_246_type 1476
-#define _tmp_247_type 1477
-#define _tmp_248_type 1478
-#define _tmp_249_type 1479
-#define _tmp_250_type 1480
-#define _tmp_251_type 1481
+#define view_pattern_type 1070
+#define closed_pattern_type 1071
+#define literal_pattern_type 1072
+#define literal_expr_type 1073
+#define complex_number_type 1074
+#define signed_number_type 1075
+#define signed_real_number_type 1076
+#define real_number_type 1077
+#define imaginary_number_type 1078
+#define capture_pattern_type 1079
+#define pattern_capture_target_type 1080
+#define wildcard_pattern_type 1081
+#define value_pattern_type 1082
+#define attr_type 1083  // Left-recursive
+#define name_or_attr_type 1084  // Left-recursive
+#define group_pattern_type 1085
+#define sequence_pattern_type 1086
+#define open_sequence_pattern_type 1087
+#define maybe_sequence_pattern_type 1088
+#define maybe_star_pattern_type 1089
+#define star_pattern_type 1090
+#define mapping_pattern_type 1091
+#define items_pattern_type 1092
+#define key_value_pattern_type 1093
+#define double_star_pattern_type 1094
+#define class_pattern_type 1095
+#define positional_patterns_type 1096
+#define keyword_patterns_type 1097
+#define keyword_pattern_type 1098
+#define expressions_type 1099
+#define expression_type 1100
+#define yield_expr_type 1101
+#define star_expressions_type 1102
+#define star_expression_type 1103
+#define star_named_expressions_type 1104
+#define star_named_expression_type 1105
+#define assignment_expression_type 1106
+#define named_expression_type 1107
+#define disjunction_type 1108
+#define conjunction_type 1109
+#define inversion_type 1110
+#define comparison_type 1111
+#define compare_op_bitwise_or_pair_type 1112
+#define eq_bitwise_or_type 1113
+#define noteq_bitwise_or_type 1114
+#define lte_bitwise_or_type 1115
+#define lt_bitwise_or_type 1116
+#define gte_bitwise_or_type 1117
+#define gt_bitwise_or_type 1118
+#define notin_bitwise_or_type 1119
+#define in_bitwise_or_type 1120
+#define isnot_bitwise_or_type 1121
+#define is_bitwise_or_type 1122
+#define bitwise_or_type 1123  // Left-recursive
+#define bitwise_xor_type 1124  // Left-recursive
+#define bitwise_and_type 1125  // Left-recursive
+#define shift_expr_type 1126  // Left-recursive
+#define sum_type 1127  // Left-recursive
+#define term_type 1128  // Left-recursive
+#define factor_type 1129
+#define power_type 1130
+#define await_primary_type 1131
+#define primary_type 1132  // Left-recursive
+#define slices_type 1133
+#define slice_type 1134
+#define atom_type 1135
+#define group_type 1136
+#define lambdef_type 1137
+#define lambda_params_type 1138
+#define lambda_parameters_type 1139
+#define lambda_slash_no_default_type 1140
+#define lambda_slash_with_default_type 1141
+#define lambda_star_etc_type 1142
+#define lambda_kwds_type 1143
+#define lambda_param_no_default_type 1144
+#define lambda_param_with_default_type 1145
+#define lambda_param_maybe_default_type 1146
+#define lambda_param_type 1147
+#define strings_type 1148
+#define list_type 1149
+#define tuple_type 1150
+#define set_type 1151
+#define dict_type 1152
+#define double_starred_kvpairs_type 1153
+#define double_starred_kvpair_type 1154
+#define kvpair_type 1155
+#define for_if_clauses_type 1156
+#define for_if_clause_type 1157
+#define listcomp_type 1158
+#define setcomp_type 1159
+#define genexp_type 1160
+#define dictcomp_type 1161
+#define arguments_type 1162
+#define args_type 1163
+#define kwargs_type 1164
+#define starred_expression_type 1165
+#define kwarg_or_starred_type 1166
+#define kwarg_or_double_starred_type 1167
+#define star_targets_type 1168
+#define star_targets_list_seq_type 1169
+#define star_targets_tuple_seq_type 1170
+#define star_target_type 1171
+#define target_with_star_atom_type 1172
+#define star_atom_type 1173
+#define single_target_type 1174
+#define single_subscript_attribute_target_type 1175
+#define t_primary_type 1176  // Left-recursive
+#define t_lookahead_type 1177
+#define del_targets_type 1178
+#define del_target_type 1179
+#define del_t_atom_type 1180
+#define type_expressions_type 1181
+#define func_type_comment_type 1182
+#define invalid_arguments_type 1183
+#define invalid_kwarg_type 1184
+#define expression_without_invalid_type 1185
+#define invalid_legacy_expression_type 1186
+#define invalid_expression_type 1187
+#define invalid_named_expression_type 1188
+#define invalid_assignment_type 1189
+#define invalid_ann_assign_target_type 1190
+#define invalid_del_stmt_type 1191
+#define invalid_block_type 1192
+#define invalid_comprehension_type 1193
+#define invalid_dict_comprehension_type 1194
+#define invalid_parameters_type 1195
+#define invalid_default_type 1196
+#define invalid_star_etc_type 1197
+#define invalid_kwds_type 1198
+#define invalid_parameters_helper_type 1199
+#define invalid_lambda_parameters_type 1200
+#define invalid_lambda_parameters_helper_type 1201
+#define invalid_lambda_star_etc_type 1202
+#define invalid_lambda_kwds_type 1203
+#define invalid_double_type_comments_type 1204
+#define invalid_with_item_type 1205
+#define invalid_for_target_type 1206
+#define invalid_group_type 1207
+#define invalid_import_type 1208
+#define invalid_import_from_targets_type 1209
+#define invalid_with_stmt_type 1210
+#define invalid_with_stmt_indent_type 1211
+#define invalid_try_stmt_type 1212
+#define invalid_except_stmt_type 1213
+#define invalid_finally_stmt_type 1214
+#define invalid_except_stmt_indent_type 1215
+#define invalid_except_star_stmt_indent_type 1216
+#define invalid_match_stmt_type 1217
+#define invalid_case_block_type 1218
+#define invalid_as_pattern_type 1219
+#define invalid_class_pattern_type 1220
+#define invalid_class_argument_pattern_type 1221
+#define invalid_if_stmt_type 1222
+#define invalid_elif_stmt_type 1223
+#define invalid_else_stmt_type 1224
+#define invalid_while_stmt_type 1225
+#define invalid_for_stmt_type 1226
+#define invalid_def_raw_type 1227
+#define invalid_class_def_raw_type 1228
+#define invalid_double_starred_kvpairs_type 1229
+#define invalid_kvpair_type 1230
+#define invalid_starred_expression_type 1231
+#define _loop0_1_type 1232
+#define _loop0_2_type 1233
+#define _loop1_3_type 1234
+#define _loop0_5_type 1235
+#define _gather_4_type 1236
+#define _tmp_6_type 1237
+#define _tmp_7_type 1238
+#define _tmp_8_type 1239
+#define _tmp_9_type 1240
+#define _tmp_10_type 1241
+#define _tmp_11_type 1242
+#define _tmp_12_type 1243
+#define _tmp_13_type 1244
+#define _loop1_14_type 1245
+#define _tmp_15_type 1246
+#define _tmp_16_type 1247
+#define _tmp_17_type 1248
+#define _loop0_19_type 1249
+#define _gather_18_type 1250
+#define _loop0_21_type 1251
+#define _gather_20_type 1252
+#define _tmp_22_type 1253
+#define _tmp_23_type 1254
+#define _loop0_24_type 1255
+#define _loop1_25_type 1256
+#define _loop0_27_type 1257
+#define _gather_26_type 1258
+#define _tmp_28_type 1259
+#define _loop0_30_type 1260
+#define _gather_29_type 1261
+#define _tmp_31_type 1262
+#define _loop1_32_type 1263
+#define _tmp_33_type 1264
+#define _tmp_34_type 1265
+#define _tmp_35_type 1266
+#define _loop0_36_type 1267
+#define _loop0_37_type 1268
+#define _loop0_38_type 1269
+#define _loop1_39_type 1270
+#define _loop0_40_type 1271
+#define _loop1_41_type 1272
+#define _loop1_42_type 1273
+#define _loop1_43_type 1274
+#define _loop0_44_type 1275
+#define _loop1_45_type 1276
+#define _loop0_46_type 1277
+#define _loop1_47_type 1278
+#define _loop0_48_type 1279
+#define _loop0_49_type 1280
+#define _loop1_50_type 1281
+#define _loop0_52_type 1282
+#define _gather_51_type 1283
+#define _loop0_54_type 1284
+#define _gather_53_type 1285
+#define _loop0_56_type 1286
+#define _gather_55_type 1287
+#define _loop0_58_type 1288
+#define _gather_57_type 1289
+#define _tmp_59_type 1290
+#define _loop1_60_type 1291
+#define _loop1_61_type 1292
+#define _tmp_62_type 1293
+#define _tmp_63_type 1294
+#define _loop1_64_type 1295
+#define _loop0_66_type 1296
+#define _gather_65_type 1297
+#define _tmp_67_type 1298
+#define _tmp_68_type 1299
+#define _tmp_69_type 1300
+#define _tmp_70_type 1301
+#define _loop0_72_type 1302
+#define _gather_71_type 1303
+#define _loop0_74_type 1304
+#define _gather_73_type 1305
+#define _tmp_75_type 1306
+#define _loop0_77_type 1307
+#define _gather_76_type 1308
+#define _loop0_79_type 1309
+#define _gather_78_type 1310
+#define _loop1_80_type 1311
+#define _loop1_81_type 1312
+#define _loop0_83_type 1313
+#define _gather_82_type 1314
+#define _loop1_84_type 1315
+#define _loop1_85_type 1316
+#define _loop1_86_type 1317
+#define _tmp_87_type 1318
+#define _loop0_89_type 1319
+#define _gather_88_type 1320
+#define _tmp_90_type 1321
+#define _tmp_91_type 1322
+#define _tmp_92_type 1323
+#define _tmp_93_type 1324
+#define _tmp_94_type 1325
+#define _loop0_95_type 1326
+#define _loop0_96_type 1327
+#define _loop0_97_type 1328
+#define _loop1_98_type 1329
+#define _loop0_99_type 1330
+#define _loop1_100_type 1331
+#define _loop1_101_type 1332
+#define _loop1_102_type 1333
+#define _loop0_103_type 1334
+#define _loop1_104_type 1335
+#define _loop0_105_type 1336
+#define _loop1_106_type 1337
+#define _loop0_107_type 1338
+#define _loop1_108_type 1339
+#define _loop1_109_type 1340
+#define _tmp_110_type 1341
+#define _loop0_112_type 1342
+#define _gather_111_type 1343
+#define _loop1_113_type 1344
+#define _loop0_114_type 1345
+#define _loop0_115_type 1346
+#define _tmp_116_type 1347
+#define _loop0_118_type 1348
+#define _gather_117_type 1349
+#define _tmp_119_type 1350
+#define _loop0_121_type 1351
+#define _gather_120_type 1352
+#define _loop0_123_type 1353
+#define _gather_122_type 1354
+#define _loop0_125_type 1355
+#define _gather_124_type 1356
+#define _loop0_127_type 1357
+#define _gather_126_type 1358
+#define _loop0_128_type 1359
+#define _loop0_130_type 1360
+#define _gather_129_type 1361
+#define _loop1_131_type 1362
+#define _tmp_132_type 1363
+#define _loop0_134_type 1364
+#define _gather_133_type 1365
+#define _loop0_136_type 1366
+#define _gather_135_type 1367
+#define _loop0_138_type 1368
+#define _gather_137_type 1369
+#define _loop0_140_type 1370
+#define _gather_139_type 1371
+#define _loop0_142_type 1372
+#define _gather_141_type 1373
+#define _tmp_143_type 1374
+#define _tmp_144_type 1375
+#define _tmp_145_type 1376
+#define _tmp_146_type 1377
+#define _tmp_147_type 1378
+#define _tmp_148_type 1379
+#define _tmp_149_type 1380
+#define _tmp_150_type 1381
+#define _tmp_151_type 1382
+#define _tmp_152_type 1383
+#define _tmp_153_type 1384
+#define _loop0_154_type 1385
+#define _loop0_155_type 1386
+#define _loop0_156_type 1387
+#define _tmp_157_type 1388
+#define _tmp_158_type 1389
+#define _tmp_159_type 1390
+#define _tmp_160_type 1391
+#define _tmp_161_type 1392
+#define _loop0_162_type 1393
+#define _loop0_163_type 1394
+#define _loop0_164_type 1395
+#define _loop1_165_type 1396
+#define _tmp_166_type 1397
+#define _loop0_167_type 1398
+#define _tmp_168_type 1399
+#define _loop0_169_type 1400
+#define _loop1_170_type 1401
+#define _tmp_171_type 1402
+#define _tmp_172_type 1403
+#define _tmp_173_type 1404
+#define _loop0_174_type 1405
+#define _tmp_175_type 1406
+#define _tmp_176_type 1407
+#define _loop1_177_type 1408
+#define _tmp_178_type 1409
+#define _loop0_179_type 1410
+#define _loop0_180_type 1411
+#define _loop0_181_type 1412
+#define _loop0_183_type 1413
+#define _gather_182_type 1414
+#define _tmp_184_type 1415
+#define _loop0_185_type 1416
+#define _tmp_186_type 1417
+#define _loop0_187_type 1418
+#define _loop1_188_type 1419
+#define _loop1_189_type 1420
+#define _tmp_190_type 1421
+#define _tmp_191_type 1422
+#define _loop0_192_type 1423
+#define _tmp_193_type 1424
+#define _tmp_194_type 1425
+#define _tmp_195_type 1426
+#define _loop0_197_type 1427
+#define _gather_196_type 1428
+#define _loop0_199_type 1429
+#define _gather_198_type 1430
+#define _loop0_201_type 1431
+#define _gather_200_type 1432
+#define _loop0_203_type 1433
+#define _gather_202_type 1434
+#define _tmp_204_type 1435
+#define _loop0_205_type 1436
+#define _loop1_206_type 1437
+#define _tmp_207_type 1438
+#define _loop0_208_type 1439
+#define _loop1_209_type 1440
+#define _tmp_210_type 1441
+#define _tmp_211_type 1442
+#define _tmp_212_type 1443
+#define _tmp_213_type 1444
+#define _tmp_214_type 1445
+#define _tmp_215_type 1446
+#define _tmp_216_type 1447
+#define _tmp_217_type 1448
+#define _tmp_218_type 1449
+#define _tmp_219_type 1450
+#define _loop0_221_type 1451
+#define _gather_220_type 1452
+#define _tmp_222_type 1453
+#define _tmp_223_type 1454
+#define _tmp_224_type 1455
+#define _tmp_225_type 1456
+#define _tmp_226_type 1457
+#define _tmp_227_type 1458
+#define _tmp_228_type 1459
+#define _tmp_229_type 1460
+#define _tmp_230_type 1461
+#define _tmp_231_type 1462
+#define _tmp_232_type 1463
+#define _tmp_233_type 1464
+#define _tmp_234_type 1465
+#define _tmp_235_type 1466
+#define _tmp_236_type 1467
+#define _tmp_237_type 1468
+#define _tmp_238_type 1469
+#define _tmp_239_type 1470
+#define _tmp_240_type 1471
+#define _tmp_241_type 1472
+#define _tmp_242_type 1473
+#define _tmp_243_type 1474
+#define _tmp_244_type 1475
+#define _tmp_245_type 1476
+#define _tmp_246_type 1477
+#define _tmp_247_type 1478
+#define _tmp_248_type 1479
+#define _tmp_249_type 1480
+#define _tmp_250_type 1481
+#define _tmp_251_type 1482
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -630,6 +631,7 @@ static pattern_ty patterns_rule(Parser *p);
 static pattern_ty pattern_rule(Parser *p);
 static pattern_ty as_pattern_rule(Parser *p);
 static pattern_ty or_pattern_rule(Parser *p);
+static pattern_ty view_pattern_rule(Parser *p);
 static pattern_ty closed_pattern_rule(Parser *p);
 static pattern_ty literal_pattern_rule(Parser *p);
 static expr_ty literal_expr_rule(Parser *p);
@@ -7893,7 +7895,7 @@ as_pattern_rule(Parser *p)
     return _res;
 }
 
-// or_pattern: '|'.closed_pattern+
+// or_pattern: '|'.view_pattern+
 static pattern_ty
 or_pattern_rule(Parser *p)
 {
@@ -7916,18 +7918,18 @@ or_pattern_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // '|'.closed_pattern+
+    { // '|'.view_pattern+
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> or_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'|'.closed_pattern+"));
+        D(fprintf(stderr, "%*c> or_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'|'.view_pattern+"));
         asdl_pattern_seq* patterns;
         if (
-            (patterns = (asdl_pattern_seq*)_gather_65_rule(p))  // '|'.closed_pattern+
+            (patterns = (asdl_pattern_seq*)_gather_65_rule(p))  // '|'.view_pattern+
         )
         {
-            D(fprintf(stderr, "%*c+ or_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'|'.closed_pattern+"));
+            D(fprintf(stderr, "%*c+ or_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'|'.view_pattern+"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -7947,7 +7949,94 @@ or_pattern_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s or_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'|'.closed_pattern+"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'|'.view_pattern+"));
+    }
+    _res = NULL;
+  done:
+    p->level--;
+    return _res;
+}
+
+// view_pattern: expression '->' closed_pattern | closed_pattern
+static pattern_ty
+view_pattern_rule(Parser *p)
+{
+    if (p->level++ == MAXSTACK) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    pattern_ty _res = NULL;
+    int _mark = p->mark;
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    int _start_lineno = p->tokens[_mark]->lineno;
+    UNUSED(_start_lineno); // Only used by EXTRA macro
+    int _start_col_offset = p->tokens[_mark]->col_offset;
+    UNUSED(_start_col_offset); // Only used by EXTRA macro
+    { // expression '->' closed_pattern
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> view_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression '->' closed_pattern"));
+        Token * _literal;
+        expr_ty exp;
+        pattern_ty pat;
+        if (
+            (exp = expression_rule(p))  // expression
+            &&
+            (_literal = _PyPegen_expect_token(p, 51))  // token='->'
+            &&
+            (pat = closed_pattern_rule(p))  // closed_pattern
+        )
+        {
+            D(fprintf(stderr, "%*c+ view_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression '->' closed_pattern"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_MatchView ( exp , pat , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s view_pattern[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression '->' closed_pattern"));
+    }
+    { // closed_pattern
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> view_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "closed_pattern"));
+        pattern_ty closed_pattern_var;
+        if (
+            (closed_pattern_var = closed_pattern_rule(p))  // closed_pattern
+        )
+        {
+            D(fprintf(stderr, "%*c+ view_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "closed_pattern"));
+            _res = closed_pattern_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s view_pattern[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "closed_pattern"));
     }
     _res = NULL;
   done:
@@ -27821,7 +27910,7 @@ _loop1_64_rule(Parser *p)
     return _seq;
 }
 
-// _loop0_66: '|' closed_pattern
+// _loop0_66: '|' view_pattern
 static asdl_seq *
 _loop0_66_rule(Parser *p)
 {
@@ -27845,18 +27934,18 @@ _loop0_66_rule(Parser *p)
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
-    { // '|' closed_pattern
+    { // '|' view_pattern
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _loop0_66[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'|' closed_pattern"));
+        D(fprintf(stderr, "%*c> _loop0_66[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'|' view_pattern"));
         Token * _literal;
         pattern_ty elem;
         while (
             (_literal = _PyPegen_expect_token(p, 18))  // token='|'
             &&
-            (elem = closed_pattern_rule(p))  // closed_pattern
+            (elem = view_pattern_rule(p))  // view_pattern
         )
         {
             _res = elem;
@@ -27883,7 +27972,7 @@ _loop0_66_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_66[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'|' closed_pattern"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'|' view_pattern"));
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -27900,7 +27989,7 @@ _loop0_66_rule(Parser *p)
     return _seq;
 }
 
-// _gather_65: closed_pattern _loop0_66
+// _gather_65: view_pattern _loop0_66
 static asdl_seq *
 _gather_65_rule(Parser *p)
 {
@@ -27914,27 +28003,27 @@ _gather_65_rule(Parser *p)
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
-    { // closed_pattern _loop0_66
+    { // view_pattern _loop0_66
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _gather_65[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "closed_pattern _loop0_66"));
+        D(fprintf(stderr, "%*c> _gather_65[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "view_pattern _loop0_66"));
         pattern_ty elem;
         asdl_seq * seq;
         if (
-            (elem = closed_pattern_rule(p))  // closed_pattern
+            (elem = view_pattern_rule(p))  // view_pattern
             &&
             (seq = _loop0_66_rule(p))  // _loop0_66
         )
         {
-            D(fprintf(stderr, "%*c+ _gather_65[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "closed_pattern _loop0_66"));
+            D(fprintf(stderr, "%*c+ _gather_65[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "view_pattern _loop0_66"));
             _res = _PyPegen_seq_insert_in_front(p, elem, seq);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _gather_65[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "closed_pattern _loop0_66"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "view_pattern _loop0_66"));
     }
     _res = NULL;
   done:

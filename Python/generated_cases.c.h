@@ -2570,6 +2570,28 @@
             DISPATCH();
         }
 
+        TARGET(MATCH_VIEW) {
+            PyObject *func = stack_pointer[-1];
+            PyObject *subject = stack_pointer[-2];
+            PyObject *nsubject;
+            PyObject *res;
+            // Pop TOS, call it on subject, etc
+            nsubject = match_view(tstate, subject, func);
+            Py_DECREF(subject);
+            Py_DECREF(func);
+
+            if (nsubject) {
+                res = Py_NewRef(Py_True);
+            } else {
+                if (_PyErr_Occurred(tstate)) goto pop_2_error;
+                nsubject = Py_NewRef(Py_None);  // Failure!
+                res = Py_NewRef(Py_False);
+            }
+            stack_pointer[-1] = res;
+            stack_pointer[-2] = nsubject;
+            DISPATCH();
+        }
+
         TARGET(MATCH_MAPPING) {
             PyObject *subject = stack_pointer[-1];
             PyObject *res;

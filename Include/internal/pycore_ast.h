@@ -568,8 +568,8 @@ struct _match_case {
 
 enum _pattern_kind {MatchValue_kind=1, MatchSingleton_kind=2,
                      MatchSequence_kind=3, MatchMapping_kind=4,
-                     MatchClass_kind=5, MatchStar_kind=6, MatchAs_kind=7,
-                     MatchOr_kind=8};
+                     MatchClass_kind=5, MatchStar_kind=6, MatchView_kind=7,
+                     MatchAs_kind=8, MatchOr_kind=9};
 struct _pattern {
     enum _pattern_kind kind;
     union {
@@ -601,6 +601,11 @@ struct _pattern {
         struct {
             identifier name;
         } MatchStar;
+
+        struct {
+            expr_ty func;
+            pattern_ty pattern;
+        } MatchView;
 
         struct {
             pattern_ty pattern;
@@ -837,6 +842,9 @@ pattern_ty _PyAST_MatchClass(expr_ty cls, asdl_pattern_seq * patterns,
                              end_lineno, int end_col_offset, PyArena *arena);
 pattern_ty _PyAST_MatchStar(identifier name, int lineno, int col_offset, int
                             end_lineno, int end_col_offset, PyArena *arena);
+pattern_ty _PyAST_MatchView(expr_ty func, pattern_ty pattern, int lineno, int
+                            col_offset, int end_lineno, int end_col_offset,
+                            PyArena *arena);
 pattern_ty _PyAST_MatchAs(pattern_ty pattern, identifier name, int lineno, int
                           col_offset, int end_lineno, int end_col_offset,
                           PyArena *arena);

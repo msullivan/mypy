@@ -2028,6 +2028,20 @@ dummy_func(
             }
         }
 
+        inst(MATCH_VIEW, (subject, func -- nsubject, res)) {
+            // Pop TOS, call it on subject, etc
+            nsubject = match_view(tstate, subject, func);
+            DECREF_INPUTS(); // XXX? maybe?
+
+            if (nsubject) {
+                res = Py_NewRef(Py_True);
+            } else {
+                ERROR_IF(_PyErr_Occurred(tstate), error);  // Error!
+                nsubject = Py_NewRef(Py_None);  // Failure!
+                res = Py_NewRef(Py_False);
+            }
+        }
+
         inst(MATCH_MAPPING, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             res = Py_NewRef(match ? Py_True : Py_False);

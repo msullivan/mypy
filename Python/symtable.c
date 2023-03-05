@@ -1761,6 +1761,10 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         VISIT_SEQ(st, pattern, p->v.MatchClass.patterns);
         VISIT_SEQ(st, pattern, p->v.MatchClass.kwd_patterns);
         break;
+    case MatchView_kind:
+        VISIT(st, expr, p->v.MatchView.func);
+        VISIT(st, pattern, p->v.MatchView.pattern);
+        break;
     case MatchAs_kind:
         if (p->v.MatchAs.pattern) {
             VISIT(st, pattern, p->v.MatchAs.pattern);
@@ -2216,4 +2220,3 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     assert(_PyUnicode_CheckConsistency(result, 1));
     return result;
 }
-

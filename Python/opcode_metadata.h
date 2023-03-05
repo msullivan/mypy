@@ -257,6 +257,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case MATCH_CLASS:
             return 3;
+        case MATCH_VIEW:
+            return 2;
         case MATCH_MAPPING:
             return 1;
         case MATCH_SEQUENCE:
@@ -609,6 +611,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 2;
         case MATCH_CLASS:
             return 1;
+        case MATCH_VIEW:
+            return 2;
         case MATCH_MAPPING:
             return 2;
         case MATCH_SEQUENCE:
@@ -845,6 +849,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [JUMP_BACKWARD_NO_INTERRUPT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [GET_LEN] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [MATCH_CLASS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [MATCH_VIEW] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [MATCH_MAPPING] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [MATCH_SEQUENCE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [MATCH_KEYS] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },

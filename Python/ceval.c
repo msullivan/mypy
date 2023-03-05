@@ -402,6 +402,28 @@ fail:
     return NULL;
 }
 
+// Apply a view function to the subject, suppressing TypeError
+// HM: The only real reason for MATCH_VIEW to have its own opcode is
+// to simplify suppressing a warning
+static PyObject*
+match_view(PyThreadState *tstate, PyObject *subject, PyObject *func)
+{
+    // PERF: Is this the best way?
+    PyObject *res = PyObject_CallOneArg(func, subject);
+    if (res == NULL) {
+        // XXX: Should we use a different exception to signal match
+        // failure I don't think any built-in ones make sense, but we
+        // could add a new one.  We could also use a sentinel value?
+        //
+        // StopIteration is obviously semantically nonsensical but much
+        // less likely to happen spuriously than things like TypeError
+        if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+            _PyErr_Clear(tstate);
+        }
+    }
+    return res;
+}
+
 // Extract a named attribute from the subject, with additional bookkeeping to
 // raise TypeErrors for repeated lookups. On failure, return NULL (with no
 // error set). Use _PyErr_Occurred(tstate) to disambiguate.

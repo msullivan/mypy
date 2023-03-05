@@ -99,6 +99,7 @@ def_op('GET_LEN', 30)
 def_op('MATCH_MAPPING', 31)
 def_op('MATCH_SEQUENCE', 32)
 def_op('MATCH_KEYS', 33)
+def_op('MATCH_VIEW', 34)
 
 def_op('PUSH_EXC_INFO', 35)
 def_op('CHECK_EXC_MATCH', 36)

@@ -1042,6 +1042,10 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
             CALL_SEQ(astfold_pattern, pattern, node_->v.MatchClass.patterns);
             CALL_SEQ(astfold_pattern, pattern, node_->v.MatchClass.kwd_patterns);
             break;
+        case MatchView_kind:
+            CALL(astfold_expr, expr_ty, node_->v.MatchView.func);
+            CALL(astfold_pattern, pattern, node_->v.MatchView.pattern);
+            break;
         case MatchStar_kind:
             break;
         case MatchAs_kind:
