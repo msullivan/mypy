@@ -33,16 +33,18 @@ def _type_operator(cls: type[_T]) -> type[_T]: ...
 # MemberQuals: qualifiers that can apply to a Member
 MemberQuals: typing_extensions.TypeAlias = Literal["ClassVar", "Final", "Required", "NotRequired", "ReadOnly"]
 
-# ParamQuals: qualifiers that can apply to a Param
-ParamQuals: typing_extensions.TypeAlias = Literal["positional", "keyword", "default", "*", "**"]
+# ParamKind: kind markers that can apply to a Param
+ParamKind: typing_extensions.TypeAlias = Literal["positional", "keyword", "*", "**"]
 
 # --- Data Types (used in type computations) ---
 
 _Name = TypeVar("_Name")
 _Type = TypeVar("_Type")
 _Quals = TypeVar("_Quals", default=Never)
+_Kind = TypeVar("_Kind", default=Never)
 _Init = TypeVar("_Init", default=Never)
 _Definer = TypeVar("_Definer", default=Never)
+_Default = TypeVar("_Default", default=Never)
 
 class Member(Generic[_Name, _Type, _Quals, _Init, _Definer]):
     """
@@ -60,17 +62,19 @@ class Member(Generic[_Name, _Type, _Quals, _Init, _Definer]):
     init: _Init
     definer: _Definer
 
-class Param(Generic[_Name, _Type, _Quals]):
+class Param(Generic[_Name, _Type, _Kind, _Default]):
     """
     Represents a function parameter for extended callable syntax.
     - _Name: Literal[str] | None - the parameter name
     - _Type: the parameter's type
-    - _Quals: Literal['positional', 'keyword', 'default', '*', '**'] - qualifiers
+    - _Kind: Literal['positional', 'keyword', '*', '**'] - the parameter kind
+    - _Default: the parameter's default type (Never if no default)
     """
 
     name: _Name
     type: _Type
-    quals: _Quals
+    kind: _Kind
+    default: _Default
 
 
 _N = TypeVar("_N", bound=str)
@@ -79,11 +83,11 @@ _N = TypeVar("_N", bound=str)
 
 # XXX: For mysterious reasons, if I mark this as `:
 # typing_extensions.TypeAlias`, mypy thinks _N and _T are unbound...
-PosParam = Param[_N, _T, Literal["positional"]]
-PosDefaultParam = Param[_N, _T, Literal["positional", "default"]]
-DefaultParam = Param[_N, _T, Literal["default"]]
+PosParam = Param[None, _T, Literal["positional"]]
+PosDefaultParam = Param[None, _T, Literal["positional"], _T]
+DefaultParam = Param[_N, _T, Never, _T]
 NamedParam = Param[_N, _T, Literal["keyword"]]
-NamedDefaultParam = Param[_N, _T, Literal["keyword", "default"]]
+NamedDefaultParam = Param[_N, _T, Literal["keyword"], _T]
 ArgsParam = Param[None, _T, Literal["*"]]
 KwargsParam = Param[None, _T, Literal["**"]]
 
@@ -175,13 +179,16 @@ class FromUnion(Generic[_T]):
 
 _MP = TypeVar("_MP")
 _M = TypeVar("_M")
+_P = TypeVar("_P")
 
 
 GetName = GetMemberType[_MP, Literal["name"]]
 GetType = GetMemberType[_MP, Literal["type"]]
-GetQuals = GetMemberType[_MP, Literal["quals"]]
+GetQuals = GetMemberType[_M, Literal["quals"]]
+GetKind = GetMemberType[_P, Literal["kind"]]
 GetInit = GetMemberType[_M, Literal["init"]]
 GetDefiner = GetMemberType[_M, Literal["definer"]]
+GetDefault = GetMemberType[_P, Literal["default"]]
 
 # --- Type Construction Operators ---
 

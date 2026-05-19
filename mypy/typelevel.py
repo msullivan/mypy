@@ -29,9 +29,11 @@ from mypy.nodes import (
     ARG_STAR2,
     MDEF,
     ArgKind,
+    Argument,
     Block,
     ClassDef,
     Context,
+    Decorator,
     FuncDef,
     SymbolTable,
     SymbolTableNode,
@@ -579,37 +581,70 @@ def extract_qualifier_strings(typ: Type) -> list[str]:
 
 
 def _callable_to_params(evaluator: TypeLevelEvaluator, target: CallableType) -> list[Type]:
-    """Convert a CallableType's parameters into a list of Param[name, type, quals] instances."""
+    """Convert a CallableType's parameters into a list of Param[name, type, kind, default] instances."""
     param_info = evaluator.get_typemap_type("Param")
     never = UninhabitedType()
     params: list[Type] = []
 
-    for arg_type, arg_kind, arg_name in zip(target.arg_types, target.arg_kinds, target.arg_names):
+    # Align target.arg_* with the original FuncDef.arguments by position, so we
+    # can pull the default initializer for each slot (covering pos-only args too).
+    defn = target.definition
+    if isinstance(defn, Decorator):
+        defn = defn.func
+    defn_args: list[Argument] = []
+    if isinstance(defn, FuncDef):
+        defn_args = list(defn.arguments)
+        # Bound methods drop self/cls from arg_types; trim leading defn args
+        # until the lengths match.
+        while len(defn_args) > len(target.arg_types):
+            defn_args.pop(0)
+        # If a decorator transformed the signature, names won't agree;
+        # bail out of positional alignment in that case.
+        if any(
+            n is not None and n != a.variable.name for n, a in zip(target.arg_names, defn_args)
+        ):
+            defn_args = []
+
+    for i, (arg_type, arg_kind, arg_name) in enumerate(
+        zip(target.arg_types, target.arg_kinds, target.arg_names)
+    ):
         if arg_name is not None:
             name_type: Type = evaluator.literal_str(arg_name)
         else:
             name_type = NoneType()
 
-        quals: list[str] = []
+        kinds: list[str] = []
+        has_default = False
         if arg_kind == ARG_POS:
-            pass  # no quals
+            pass  # no kind marker
         elif arg_kind == ARG_OPT:
-            quals.append("default")
+            has_default = True
         elif arg_kind == ARG_STAR:
-            quals.append("*")
+            kinds.append("*")
         elif arg_kind == ARG_NAMED:
-            quals.append("keyword")
+            kinds.append("keyword")
         elif arg_kind == ARG_NAMED_OPT:
-            quals.extend(["keyword", "default"])
+            kinds.append("keyword")
+            has_default = True
         elif arg_kind == ARG_STAR2:
-            quals.append("**")
+            kinds.append("**")
 
-        if quals:
-            quals_type: Type = make_simplified_union([evaluator.literal_str(q) for q in quals])
+        if kinds:
+            kind_type: Type = make_simplified_union([evaluator.literal_str(k) for k in kinds])
         else:
-            quals_type = never
+            kind_type = never
 
-        params.append(Instance(param_info.type, [name_type, arg_type, quals_type]))
+        default_type: Type
+        if has_default:
+            # Use the literal-refined init_type populated by check_default_params
+            # if it's available (after type checking); otherwise fall back to
+            # the annotation type (during semanal-time evaluation).
+            init_type = defn_args[i].variable.init_type if i < len(defn_args) else None
+            default_type = init_type if init_type is not None else arg_type
+        else:
+            default_type = never
+
+        params.append(Instance(param_info.type, [name_type, arg_type, kind_type, default_type]))
 
     return params
 
@@ -724,7 +759,7 @@ def _eval_new_callable(*args: Type, evaluator: TypeLevelEvaluator) -> Type:
     """Evaluate _NewCallable[Param1, Param2, ..., ReturnType] -> CallableType.
 
     The last argument is the return type. All preceding arguments should be
-    Param[name, type, quals] instances describing the callable's parameters.
+    Param[name, type, kind, default] instances describing the callable's parameters.
     """
     if len(args) == 0:
         return AnyType(TypeOfAny.from_error)
@@ -744,29 +779,34 @@ def _eval_new_callable(*args: Type, evaluator: TypeLevelEvaluator) -> Type:
         if param.type.fullname not in ("typing.Param", "_typeshed.typemap.Param"):
             continue
 
-        # Param[name, type, quals]
+        # Param[name, type, kind, default]
         p_args = param.args
         if len(p_args) < 2:
             continue
 
         name = extract_literal_string(get_proper_type(p_args[0]))
         param_type = p_args[1]
-        quals = extract_qualifier_strings(p_args[2]) if len(p_args) > 2 else []
+        kinds = extract_qualifier_strings(p_args[2]) if len(p_args) > 2 else []
+        if len(kinds) > 1:
+            raise TypeLevelError(f"Param kind must be a single Literal, got Literal{kinds!r}")
+        has_default = len(p_args) > 3 and not isinstance(
+            get_proper_type(p_args[3]), UninhabitedType
+        )
 
-        qual_set = set(quals)
-        if "*" in qual_set:
+        kind_set = set(kinds)
+        if "*" in kind_set:
             arg_kinds.append(ARG_STAR)
             arg_names.append(None)
-        elif "**" in qual_set:
+        elif "**" in kind_set:
             arg_kinds.append(ARG_STAR2)
             arg_names.append(None)
-        elif "keyword" in qual_set:
-            if "default" in qual_set:
+        elif "keyword" in kind_set:
+            if has_default:
                 arg_kinds.append(ARG_NAMED_OPT)
             else:
                 arg_kinds.append(ARG_NAMED)
             arg_names.append(name)
-        elif "default" in qual_set:
+        elif has_default:
             arg_kinds.append(ARG_OPT)
             arg_names.append(name)
         else:

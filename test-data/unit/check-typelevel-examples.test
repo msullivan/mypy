@@ -724,7 +724,8 @@ type GetDefault[Init] = (
 
 
 # Generate a Member for __init__ from a class's attributes.
-# All params are keyword-only; params with defaults get Literal["keyword", "default"].
+# All params are keyword-only; the Param's D type arg carries the default type
+# (Never when the field has no default).
 type InitFnType[T] = typing.Member[
     Literal["__init__"],
     Callable[
@@ -734,12 +735,8 @@ type InitFnType[T] = typing.Member[
                 typing.Param[
                     p.name,
                     p.typ,
-                    Literal["keyword"]
-                    if typing.IsAssignable[
-                        GetDefault[p.init],
-                        Never,
-                    ]
-                    else Literal["keyword", "default"],
+                    Literal["keyword"],
+                    GetDefault[p.init],
                 ]
                 for p in typing.Iter[typing.Attrs[T]]
             ],

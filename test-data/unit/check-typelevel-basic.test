@@ -1236,12 +1236,12 @@ reveal_type(f)  # N: Revealed type is "def (a: builtins.int, *, b: builtins.str)
 [typing fixtures/typing-full.pyi]
 
 [case testNewCallableWithDefaults]
-from typing import Callable, Param, Params, Literal
+from typing import Callable, Param, Params, Literal, Never
 
 # Callable with default args
 f: Callable[Params[
     Param[Literal["a"], int],
-    Param[Literal["b"], str, Literal["default"]],
+    Param[Literal["b"], str, Never, str],
 ], bool]
 reveal_type(f)  # N: Revealed type is "def (a: builtins.int, b: builtins.str =) -> builtins.bool"
 
@@ -1263,19 +1263,32 @@ reveal_type(f)  # N: Revealed type is "def (a: builtins.int, *builtins.int, **bu
 [typing fixtures/typing-full.pyi]
 
 [case testNewCallableComplex]
-from typing import Callable, Param, Params, Literal
+from typing import Callable, Param, Params, Literal, Never
 
 # Complex callable matching PEP example
 f: Callable[Params[
     Param[Literal["a"], int, Literal["positional"]],
     Param[Literal["b"], int],
-    Param[Literal["c"], int, Literal["default"]],
+    Param[Literal["c"], int, Never, int],
     Param[None, int, Literal["*"]],
     Param[Literal["d"], int, Literal["keyword"]],
-    Param[Literal["e"], int, Literal["default", "keyword"]],
+    Param[Literal["e"], int, Literal["keyword"], int],
     Param[None, int, Literal["**"]],
 ], int]
 reveal_type(f)  # N: Revealed type is "def (a: builtins.int, b: builtins.int, c: builtins.int =, *builtins.int, d: builtins.int, e: builtins.int =, **builtins.int) -> builtins.int"
+
+[builtins fixtures/typelevel.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testNewCallableMultipleKindsError]
+from typing import Callable, Param, Params, Literal
+
+# A Param's kind must be a single Literal — a union is an error since
+# the four kinds (positional / keyword / * / **) are mutually exclusive.
+f: Callable[Params[  # E: Param kind must be a single Literal, got Literal['positional', 'keyword']
+    Param[Literal["a"], int, Literal["positional", "keyword"]],
+], bool]
+reveal_type(f)  # N: Revealed type is "Any"
 
 [builtins fixtures/typelevel.pyi]
 [typing fixtures/typing-full.pyi]
@@ -1297,7 +1310,7 @@ from typing import Callable, Param, Params, GetArg, Literal
 
 # GetArg[Callable, Callable, 0] returns tuple of Params
 a0: GetArg[Callable[[int, str], bool], Callable, Literal[0]]
-reveal_type(a0)  # N: Revealed type is "tuple[typing.Param[None, builtins.int, Never], typing.Param[None, builtins.str, Never]]"
+reveal_type(a0)  # N: Revealed type is "tuple[typing.Param[None, builtins.int, Never, Never], typing.Param[None, builtins.str, Never, Never]]"
 
 # GetArg[Callable, Callable, 1] returns return type
 a1: GetArg[Callable[[int, str], bool], Callable, Literal[1]]
@@ -1315,7 +1328,7 @@ F = Callable[Params[
     Param[Literal["y"], str, Literal["keyword"]],
 ], bool]
 a0: GetArg[F, Callable, Literal[0]]
-reveal_type(a0)  # N: Revealed type is "tuple[typing.Param[Literal['x'], builtins.int, Never], typing.Param[Literal['y'], builtins.str, Literal['keyword']]]"
+reveal_type(a0)  # N: Revealed type is "tuple[typing.Param[Literal['x'], builtins.int, Never, Never], typing.Param[Literal['y'], builtins.str, Literal['keyword'], Never]]"
 
 a1: GetArg[F, Callable, Literal[1]]
 reveal_type(a1)  # N: Revealed type is "builtins.bool"
@@ -1333,7 +1346,7 @@ reveal_type(n)  # N: Revealed type is "Literal['x']"
 t: Param[Literal["x"], int, Literal["keyword"]].type
 reveal_type(t)  # N: Revealed type is "builtins.int"
 
-q: Param[Literal["x"], int, Literal["keyword"]].quals
+q: Param[Literal["x"], int, Literal["keyword"]].kind
 reveal_type(q)  # N: Revealed type is "Literal['keyword']"
 
 [builtins fixtures/typelevel.pyi]
@@ -1348,8 +1361,89 @@ reveal_type(a)  # N: Revealed type is "Literal['x']"
 b: GetMemberType[Param[Literal["x"], int, Literal["keyword"]], Literal["type"]]
 reveal_type(b)  # N: Revealed type is "builtins.int"
 
-c: GetMemberType[Param[Literal["x"], int, Literal["keyword"]], Literal["quals"]]
+c: GetMemberType[Param[Literal["x"], int, Literal["keyword"]], Literal["kind"]]
 reveal_type(c)  # N: Revealed type is "Literal['keyword']"
+
+[builtins fixtures/typelevel.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testParamDefault]
+from typing import Callable, Param, Params, GetDefault, Literal, Never
+
+# The D type arg of Param carries the default type (Never when no default).
+p1: Param[Literal["x"], int, Literal["keyword"], int].default
+reveal_type(p1)  # N: Revealed type is "builtins.int"
+
+# GetDefault accessor
+d: GetDefault[Param[Literal["x"], int, Literal["keyword"], int]]
+reveal_type(d)  # N: Revealed type is "builtins.int"
+
+# Roundtrip through callable: a default param has D == its type.
+def real_func(a: int, b: str = "x") -> bool: ...
+g: Callable[Params[
+    Param[Literal["a"], int],
+    Param[Literal["b"], str, Never, str],
+], bool]
+g = real_func  # OK
+
+[builtins fixtures/typelevel.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testParamDefaultLiteralRefinement]
+from typing import Callable, GetArg, GetMemberType, Literal
+
+def compute() -> int: ...
+
+# When a function has simple literal defaults, the default type is refined
+# from the annotation to Literal[value]. Complex defaults fall back to the
+# annotation type.
+class C:
+    def m(
+        self,
+        a: int,
+        b: int = 5,
+        c: str = "hi",
+        d: bool = True,
+        e: object = None,
+        f: int = -1,
+        g: int = compute(),
+    ) -> bool: ...
+
+ps: GetArg[GetMemberType[C, Literal["m"]], Callable, Literal[0]]
+reveal_type(ps)  # N: Revealed type is "tuple[typing.Param[Literal['self'], __main__.C, Never, Never], typing.Param[Literal['a'], builtins.int, Never, Never], typing.Param[Literal['b'], builtins.int, Never, Literal[5]], typing.Param[Literal['c'], builtins.str, Never, Literal['hi']], typing.Param[Literal['d'], builtins.bool, Never, Literal[True]], typing.Param[Literal['e'], builtins.object, Never, None], typing.Param[Literal['f'], builtins.int, Never, Literal[-1]], typing.Param[Literal['g'], builtins.int, Never, builtins.int]]"
+
+# Positional-only parameters still get their literal defaults via positional alignment.
+class D:
+    def m(self, a: int, b: str = "po", /, c: int = 7) -> bool: ...
+
+ps2: GetArg[GetMemberType[D, Literal["m"]], Callable, Literal[0]]
+reveal_type(ps2)  # N: Revealed type is "tuple[typing.Param[None, __main__.D, Never, Never], typing.Param[None, builtins.int, Never, Never], typing.Param[None, builtins.str, Never, Literal['po']], typing.Param[Literal['c'], builtins.int, Never, Literal[7]]]"
+
+# Enum member defaults: Color.RED refines to Literal[Color.RED] via the
+# init_type populated by check_default_params (try_getting_literal on the
+# inferred MemberExpr type).
+from enum import Enum
+class Color(Enum):
+    RED = 1
+    BLUE = 2
+
+class E:
+    def m(self, c: Color = Color.RED) -> bool: ...
+
+ps3: GetArg[GetMemberType[E, Literal["m"]], Callable, Literal[0]]
+reveal_type(ps3)  # N: Revealed type is "tuple[typing.Param[Literal['self'], __main__.E, Never, Never], typing.Param[Literal['c'], __main__.Color, Never, Literal[__main__.Color.RED]]]"
+
+# Indirection through a Final-typed constant. check_default_params populates
+# Var.init_type via try_getting_literal, matching how class attrs get
+# init_type set.
+from typing import Final
+MAX_RETRIES: Final = 3
+
+class G:
+    def m(self, retries: int = MAX_RETRIES) -> bool: ...
+
+ps4: GetArg[GetMemberType[G, Literal["m"]], Callable, Literal[0]]
+reveal_type(ps4)  # N: Revealed type is "tuple[typing.Param[Literal['self'], __main__.G, Never, Never], typing.Param[Literal['retries'], builtins.int, Never, Literal[3]]]"
 
 [builtins fixtures/typelevel.pyi]
 [typing fixtures/typing-full.pyi]

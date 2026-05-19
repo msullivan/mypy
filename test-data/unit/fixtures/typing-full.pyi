@@ -322,13 +322,15 @@ _Quals = TypeVar("_Quals", default=Never)
 _Init = TypeVar("_Init", default=Never)
 _Definer = TypeVar("_Definer", default=Never)
 
-_PQuals = TypeVar("_PQuals", default=Never)
+_PKind = TypeVar("_PKind", default=Never)
+_PDefault = TypeVar("_PDefault", default=Never)
 
-class Param(Generic[_Name, _Type, _PQuals]):
+class Param(Generic[_Name, _Type, _PKind, _PDefault]):
     """Represents a function parameter for extended callable syntax."""
     name: _Name
     type: _Type
-    quals: _PQuals
+    kind: _PKind
+    default: _PDefault
 
 class Params(Generic[Unpack[_Ts]]): ...
 
@@ -347,12 +349,15 @@ class Member(Generic[_Name, _Type, _Quals, _Init, _Definer]):
 # _M = TypeVar("_M", bound=Member[Any, Any, Any, Any, Any])
 _MP = TypeVar("_MP")
 _M = TypeVar("_M")
+_P = TypeVar("_P")
 
 GetName = GetMemberType[_MP, Literal["name"]]
 GetType = GetMemberType[_MP, Literal["typ"]]
-GetQuals = GetMemberType[_MP, Literal["quals"]]
+GetQuals = GetMemberType[_M, Literal["quals"]]
+GetKind = GetMemberType[_P, Literal["kind"]]
 GetInit = GetMemberType[_M, Literal["init"]]
 GetDefiner = GetMemberType[_M, Literal["definer"]]
+GetDefault = GetMemberType[_P, Literal["default"]]
 
 _KwargDict = TypeVar('_KwargDict', bound=BaseTypedDict)
 

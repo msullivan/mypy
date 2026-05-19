@@ -1764,7 +1764,7 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi):
                 ]
             else:
                 notes = None
-            self.check_simple_assignment(
+            rvalue_type, _ = self.check_simple_assignment(
                 param.variable.type,
                 param.initializer,
                 context=param.initializer,
@@ -1773,6 +1773,11 @@ class TypeChecker(NodeVisitor[None], TypeCheckerSharedApi):
                 rvalue_name="default",
                 notes=notes,
             )
+            # Store init_type so type-level operators can introspect the
+            # parameter's default as Literal[value] (mirrors how class attrs
+            # get init_type set during their assignment check).
+            if param.variable.init_type is None:
+                param.variable.init_type = try_getting_literal(rvalue_type)
 
     def is_forward_op_method(self, method_name: str) -> bool:
         return method_name in operators.reverse_op_methods
