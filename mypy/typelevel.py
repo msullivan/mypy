@@ -613,26 +613,27 @@ def _callable_to_params(evaluator: TypeLevelEvaluator, target: CallableType) -> 
         else:
             name_type = NoneType()
 
-        kinds: list[str] = []
+        kind: str
         has_default = False
-        if arg_kind == ARG_POS:
-            pass  # no kind marker
-        elif arg_kind == ARG_OPT:
-            has_default = True
+        if arg_kind in (ARG_POS, ARG_OPT):
+            # name=None marks a positional-only parameter; otherwise it's a
+            # regular positional-or-keyword parameter.
+            kind = "positional" if arg_name is None else "positional_or_keyword"
+            if arg_kind == ARG_OPT:
+                has_default = True
         elif arg_kind == ARG_STAR:
-            kinds.append("*")
+            kind = "*"
         elif arg_kind == ARG_NAMED:
-            kinds.append("keyword")
+            kind = "keyword"
         elif arg_kind == ARG_NAMED_OPT:
-            kinds.append("keyword")
+            kind = "keyword"
             has_default = True
         elif arg_kind == ARG_STAR2:
-            kinds.append("**")
-
-        if kinds:
-            kind_type: Type = make_simplified_union([evaluator.literal_str(k) for k in kinds])
+            kind = "**"
         else:
-            kind_type = never
+            kind = "positional_or_keyword"
+
+        kind_type: Type = evaluator.literal_str(kind)
 
         default_type: Type
         if has_default:
@@ -786,6 +787,8 @@ def _eval_new_callable(*args: Type, evaluator: TypeLevelEvaluator) -> Type:
 
         name = extract_literal_string(get_proper_type(p_args[0]))
         param_type = p_args[1]
+        if len(p_args) > 2 and isinstance(get_proper_type(p_args[2]), UninhabitedType):
+            raise TypeLevelError("Param kind cannot be Never; must be a ParamKind")
         kinds = extract_qualifier_strings(p_args[2]) if len(p_args) > 2 else []
         if len(kinds) > 1:
             raise TypeLevelError(f"Param kind must be a single Literal, got Literal{kinds!r}")

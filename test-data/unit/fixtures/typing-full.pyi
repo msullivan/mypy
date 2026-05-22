@@ -322,7 +322,7 @@ _Quals = TypeVar("_Quals", default=Never)
 _Init = TypeVar("_Init", default=Never)
 _Definer = TypeVar("_Definer", default=Never)
 
-_PKind = TypeVar("_PKind", default=Never)
+_PKind = TypeVar("_PKind", default=Literal["positional_or_keyword"])
 _PDefault = TypeVar("_PDefault", default=Never)
 
 class Param(Generic[_Name, _Type, _PKind, _PDefault]):

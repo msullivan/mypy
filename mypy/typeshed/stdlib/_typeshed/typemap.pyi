@@ -34,14 +34,16 @@ def _type_operator(cls: type[_T]) -> type[_T]: ...
 MemberQuals: typing_extensions.TypeAlias = Literal["ClassVar", "Final", "Required", "NotRequired", "ReadOnly"]
 
 # ParamKind: kind markers that can apply to a Param
-ParamKind: typing_extensions.TypeAlias = Literal["positional", "keyword", "*", "**"]
+ParamKind: typing_extensions.TypeAlias = Literal[
+    "positional", "positional_or_keyword", "keyword", "*", "**"
+]
 
 # --- Data Types (used in type computations) ---
 
 _Name = TypeVar("_Name")
 _Type = TypeVar("_Type")
 _Quals = TypeVar("_Quals", default=Never)
-_Kind = TypeVar("_Kind", default=Never)
+_Kind = TypeVar("_Kind", default=Literal["positional_or_keyword"])
 _Init = TypeVar("_Init", default=Never)
 _Definer = TypeVar("_Definer", default=Never)
 _Default = TypeVar("_Default", default=Never)
@@ -67,7 +69,7 @@ class Param(Generic[_Name, _Type, _Kind, _Default]):
     Represents a function parameter for extended callable syntax.
     - _Name: Literal[str] | None - the parameter name
     - _Type: the parameter's type
-    - _Kind: Literal['positional', 'keyword', '*', '**'] - the parameter kind
+    - _Kind: ParamKind - the parameter kind (defaults to 'positional_or_keyword')
     - _Default: the parameter's default type (Never if no default)
     """
 
@@ -85,7 +87,7 @@ _N = TypeVar("_N", bound=str)
 # typing_extensions.TypeAlias`, mypy thinks _N and _T are unbound...
 PosParam = Param[None, _T, Literal["positional"]]
 PosDefaultParam = Param[None, _T, Literal["positional"], _T]
-DefaultParam = Param[_N, _T, Never, _T]
+DefaultParam = Param[_N, _T, Literal["positional_or_keyword"], _T]
 NamedParam = Param[_N, _T, Literal["keyword"]]
 NamedDefaultParam = Param[_N, _T, Literal["keyword"], _T]
 ArgsParam = Param[None, _T, Literal["*"]]
