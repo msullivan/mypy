@@ -322,7 +322,21 @@ _Quals = TypeVar("_Quals", default=Never)
 _Init = TypeVar("_Init", default=Never)
 _Definer = TypeVar("_Definer", default=Never)
 
-_PKind = TypeVar("_PKind", default=Literal["positional_or_keyword"])
+import enum
+
+class ParamKind(enum.IntEnum):
+    POSITIONAL_ONLY = 0
+    POSITIONAL_OR_KEYWORD = 1
+    VAR_POSITIONAL = 2
+    KEYWORD_ONLY = 3
+    VAR_KEYWORD = 4
+
+# Use a Literal[str] (matching the enum member name) instead of
+# Literal[ParamKind.POSITIONAL_OR_KEYWORD] because the test fixture's
+# minimal TypeVar/Literal shims don't accept enum-valued Literals as
+# TypeVar defaults. _callable_to_params/_eval_new_callable treat both
+# forms identically (they only look at the Literal's string value).
+_PKind = TypeVar("_PKind", default=Literal["POSITIONAL_OR_KEYWORD"])
 _PDefault = TypeVar("_PDefault", default=Never)
 
 class Param(Generic[_Name, _Type, _PKind, _PDefault]):

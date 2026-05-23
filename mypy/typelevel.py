@@ -618,22 +618,23 @@ def _callable_to_params(evaluator: TypeLevelEvaluator, target: CallableType) -> 
         if arg_kind in (ARG_POS, ARG_OPT):
             # name=None marks a positional-only parameter; otherwise it's a
             # regular positional-or-keyword parameter.
-            kind = "positional" if arg_name is None else "positional_or_keyword"
+            kind = "POSITIONAL_ONLY" if arg_name is None else "POSITIONAL_OR_KEYWORD"
             if arg_kind == ARG_OPT:
                 has_default = True
         elif arg_kind == ARG_STAR:
-            kind = "*"
+            kind = "VAR_POSITIONAL"
         elif arg_kind == ARG_NAMED:
-            kind = "keyword"
+            kind = "KEYWORD_ONLY"
         elif arg_kind == ARG_NAMED_OPT:
-            kind = "keyword"
+            kind = "KEYWORD_ONLY"
             has_default = True
         elif arg_kind == ARG_STAR2:
-            kind = "**"
+            kind = "VAR_KEYWORD"
         else:
-            kind = "positional_or_keyword"
+            kind = "POSITIONAL_OR_KEYWORD"
 
-        kind_type: Type = evaluator.literal_str(kind)
+        param_kind_info = evaluator.get_typemap_type("ParamKind")
+        kind_type: Type = LiteralType(kind, fallback=param_kind_info)
 
         default_type: Type
         if has_default:
@@ -797,13 +798,13 @@ def _eval_new_callable(*args: Type, evaluator: TypeLevelEvaluator) -> Type:
         )
 
         kind_set = set(kinds)
-        if "*" in kind_set:
+        if "VAR_POSITIONAL" in kind_set:
             arg_kinds.append(ARG_STAR)
             arg_names.append(None)
-        elif "**" in kind_set:
+        elif "VAR_KEYWORD" in kind_set:
             arg_kinds.append(ARG_STAR2)
             arg_names.append(None)
-        elif "keyword" in kind_set:
+        elif "KEYWORD_ONLY" in kind_set:
             if has_default:
                 arg_kinds.append(ARG_NAMED_OPT)
             else:

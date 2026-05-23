@@ -694,6 +694,7 @@ reveal_type(upd_types)  # N: Revealed type is "tuple[builtins.str | None, builti
 from typing import (
     Callable,
     Literal,
+    ParamKind,
     ReadOnly,
     TypedDict,
     Never,
@@ -735,7 +736,7 @@ type InitFnType[T] = typing.Member[
                 typing.Param[
                     p.name,
                     p.typ,
-                    Literal["keyword"],
+                    Literal[ParamKind.KEYWORD_ONLY],
                     GetDefault[p.init],
                 ]
                 for p in typing.Iter[typing.Attrs[T]]
