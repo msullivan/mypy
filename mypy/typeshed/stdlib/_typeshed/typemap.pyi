@@ -4,6 +4,7 @@ These are here so that we can also easily export them from typing_extensions
 and typemap.typing.
 """
 
+import enum
 import typing_extensions
 from typing import Any, Generic, Literal, TypeVar, TypedDict
 from typing_extensions import TypeVarTuple, Unpack, Never
@@ -33,17 +34,21 @@ def _type_operator(cls: type[_T]) -> type[_T]: ...
 # MemberQuals: qualifiers that can apply to a Member
 MemberQuals: typing_extensions.TypeAlias = Literal["ClassVar", "Final", "Required", "NotRequired", "ReadOnly"]
 
-# ParamKind: kind markers that can apply to a Param
-ParamKind: typing_extensions.TypeAlias = Literal[
-    "positional", "positional_or_keyword", "keyword", "*", "**"
-]
+# ParamKind: kind markers that can apply to a Param, mirroring
+# inspect._ParameterKind.
+class ParamKind(enum.IntEnum):
+    POSITIONAL_ONLY = 0
+    POSITIONAL_OR_KEYWORD = 1
+    VAR_POSITIONAL = 2
+    KEYWORD_ONLY = 3
+    VAR_KEYWORD = 4
 
 # --- Data Types (used in type computations) ---
 
 _Name = TypeVar("_Name")
 _Type = TypeVar("_Type")
 _Quals = TypeVar("_Quals", default=Never)
-_Kind = TypeVar("_Kind", default=Literal["positional_or_keyword"])
+_Kind = TypeVar("_Kind", default=Literal[ParamKind.POSITIONAL_OR_KEYWORD])
 _Init = TypeVar("_Init", default=Never)
 _Definer = TypeVar("_Definer", default=Never)
 _Default = TypeVar("_Default", default=Never)
@@ -69,7 +74,7 @@ class Param(Generic[_Name, _Type, _Kind, _Default]):
     Represents a function parameter for extended callable syntax.
     - _Name: Literal[str] | None - the parameter name
     - _Type: the parameter's type
-    - _Kind: ParamKind - the parameter kind (defaults to 'positional_or_keyword')
+    - _Kind: ParamKind - the parameter kind (defaults to POSITIONAL_OR_KEYWORD)
     - _Default: the parameter's default type (Never if no default)
     """
 
@@ -85,13 +90,13 @@ _N = TypeVar("_N", bound=str)
 
 # XXX: For mysterious reasons, if I mark this as `:
 # typing_extensions.TypeAlias`, mypy thinks _N and _T are unbound...
-PosParam = Param[None, _T, Literal["positional"]]
-PosDefaultParam = Param[None, _T, Literal["positional"], _T]
-DefaultParam = Param[_N, _T, Literal["positional_or_keyword"], _T]
-NamedParam = Param[_N, _T, Literal["keyword"]]
-NamedDefaultParam = Param[_N, _T, Literal["keyword"], _T]
-ArgsParam = Param[None, _T, Literal["*"]]
-KwargsParam = Param[None, _T, Literal["**"]]
+PosParam = Param[None, _T, Literal[ParamKind.POSITIONAL_ONLY]]
+PosDefaultParam = Param[None, _T, Literal[ParamKind.POSITIONAL_ONLY], _T]
+DefaultParam = Param[_N, _T, Literal[ParamKind.POSITIONAL_OR_KEYWORD], _T]
+NamedParam = Param[_N, _T, Literal[ParamKind.KEYWORD_ONLY]]
+NamedDefaultParam = Param[_N, _T, Literal[ParamKind.KEYWORD_ONLY], _T]
+ArgsParam = Param[None, _T, Literal[ParamKind.VAR_POSITIONAL]]
+KwargsParam = Param[None, _T, Literal[ParamKind.VAR_KEYWORD]]
 
 class Params(Generic[Unpack[_Ts]]):
     """
