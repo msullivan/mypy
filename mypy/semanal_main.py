@@ -94,12 +94,20 @@ def semantic_analysis_for_scc(graph: Graph, scc: list[str], errors: Errors) -> N
     The scc will be processed roughly in the order the modules are included
     in the list.
     """
+    from mypy.typelevel import typelevel_ctx
+
     patches: Patches = []
     # Note that functions can't define new module-level attributes
     # using 'global x', since module top levels are fully processed
     # before functions. This limitation is unlikely to go away soon.
-    process_top_levels(graph, scc, patches)
-    process_functions(graph, scc, patches)
+    #
+    # Defer type-level reads of class member schemas here: class transformations
+    # such as UpdateClass are only applied below in apply_class_plugin_hooks, so
+    # any type-level computation forced during these passes must not observe the
+    # stale pre-transformation schema (see typelevel.defer_class_schema).
+    with typelevel_ctx.defer_class_schema():
+        process_top_levels(graph, scc, patches)
+        process_functions(graph, scc, patches)
     # We use patch callbacks to fix up things when we expect relatively few
     # callbacks to be required.
     apply_semantic_analyzer_patches(patches)
@@ -150,19 +158,24 @@ def semantic_analysis_for_targets(
     defined on self) removed by AST stripper that may need to be reintroduced
     here.  They must be added before any methods are analyzed.
     """
+    from mypy.typelevel import typelevel_ctx
+
     patches: Patches = []
-    if any(isinstance(n.node, MypyFile) for n in nodes):
-        # Process module top level first (if needed).
-        process_top_levels(graph, [state.id], patches)
-    restore_saved_attrs(saved_attrs)
-    analyzer = state.manager.semantic_analyzer
-    for n in nodes:
-        if isinstance(n.node, MypyFile):
-            # Already done above.
-            continue
-        process_top_level_function(
-            analyzer, state, state.id, n.node.fullname, n.node, n.active_typeinfo, patches
-        )
+    # Defer type-level reads of class member schemas until UpdateClass and other
+    # class transformations are applied below (mirrors semantic_analysis_for_scc).
+    with typelevel_ctx.defer_class_schema():
+        if any(isinstance(n.node, MypyFile) for n in nodes):
+            # Process module top level first (if needed).
+            process_top_levels(graph, [state.id], patches)
+        restore_saved_attrs(saved_attrs)
+        analyzer = state.manager.semantic_analyzer
+        for n in nodes:
+            if isinstance(n.node, MypyFile):
+                # Already done above.
+                continue
+            process_top_level_function(
+                analyzer, state, state.id, n.node.fullname, n.node, n.active_typeinfo, patches
+            )
     apply_semantic_analyzer_patches(patches)
     apply_class_plugin_hooks(graph, [state.id], state.manager.errors)
     check_type_arguments_in_targets(nodes, state, state.manager.errors)
