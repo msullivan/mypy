@@ -64,3 +64,47 @@ reveal_type(Child().x)  # N: Revealed type is "builtins.int"
 
 [builtins fixtures/typelevel.pyi]
 [typing fixtures/typing-full.pyi]
+
+
+[case testUpdateClassTypeManipulatorSeesUpdatedSchema]
+# flags: --python-version 3.14
+from typing import Any, Literal, Member, UpdateClass, IsAssignable, Bool, RaiseError, GetMemberType
+
+class CustomField[T]: ...
+
+class WrapFields:
+    def __init_subclass__[T](cls: type[T]) -> UpdateClass[
+        Member[Literal["x"], CustomField[int]],
+    ]:
+        ...
+
+class Point(WrapFields):
+    x: int
+
+# The UpdateClass transformation rewrites x: int into x: CustomField[int].
+reveal_type(Point.x)  # N: Revealed type is "__main__.CustomField[builtins.int]"
+
+type IsCustomField[C, N] = (
+    Bool[Literal[True]]
+    if IsAssignable[GetMemberType[C, N], CustomField[Any]]
+    else RaiseError[Literal["Field is not a CustomField!"]]
+)
+
+# A type manipulator that reads Point's schema must observe the *transformed*
+# schema (CustomField[int]), not the stale pre-transformation schema (int).
+# Otherwise a spurious "Field is not a CustomField!" error is emitted, because
+# annotation analysis forces evaluation before UpdateClass has been applied.
+def uses_annotation() -> None:
+    foo: IsCustomField[Point, Literal["x"]]
+    reveal_type(foo)  # N: Revealed type is "Literal[True]"
+
+# Regression: the same must hold for a function-local type alias. Its target
+# was previously evaluated (and frozen to Never) during semantic analysis,
+# before the UpdateClass transformation had been applied.
+def uses_local_alias() -> None:
+    type XL = IsCustomField[Point, Literal["x"]]
+    xl: XL
+    reveal_type(xl)  # N: Revealed type is "Literal[True]"
+
+[builtins fixtures/typelevel.pyi]
+[typing fixtures/typing-full.pyi]

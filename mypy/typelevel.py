@@ -35,6 +35,7 @@ from mypy.nodes import (
     Context,
     Decorator,
     FuncDef,
+    RefExpr,
     SymbolTable,
     SymbolTableNode,
     TypeInfo,
@@ -92,6 +93,10 @@ class TypeLevelContext:
         # ourselves or something instead?
         self._evaluator: TypeLevelEvaluator | None = None
         self._suppress_errors: bool = False
+        # True while the main semantic-analysis passes (module top levels and
+        # function bodies) are running, before class transformations such as
+        # UpdateClass have been applied. See defer_class_schema() below.
+        self._defer_class_schema: bool = False
 
     @property
     def api(self) -> SemanticAnalyzerInterface | None:
@@ -127,6 +132,29 @@ class TypeLevelContext:
             yield
         finally:
             self._suppress_errors = saved
+
+    @contextmanager
+    def defer_class_schema(self) -> Iterator[None]:
+        """Defer type-level reads of class member schemas during semantic analysis.
+
+        Class transformations such as UpdateClass are applied in a dedicated
+        pass (apply_class_plugin_hooks) that runs *after* the main semantic
+        analysis passes which resolve annotations and type aliases. Those
+        earlier passes can nonetheless force evaluation of type-level
+        computations (e.g. via has_placeholder() or annotation analysis).
+
+        While this context is active, reading the member schema of a class that
+        is subject to a not-yet-applied UpdateClass effect raises
+        EvaluationStuck, so the surrounding computation stays unevaluated (and
+        is retried later, once the schema is final) instead of observing the
+        stale pre-transformation schema and emitting spurious errors.
+        """
+        saved = self._defer_class_schema
+        self._defer_class_schema = True
+        try:
+            yield
+        finally:
+            self._defer_class_schema = saved
 
 
 # Global context instance for type-level computation
@@ -1045,6 +1073,45 @@ def _should_skip_type_info(type_info: TypeInfo, api: SemanticAnalyzerInterface) 
     return False
 
 
+def _returns_update_class(func_type: CallableType | None) -> bool:
+    """Whether a callable's return type is an (unevaluated) UpdateClass[...]."""
+    if func_type is None:
+        return False
+    ret_type = func_type.ret_type
+    # Don't use get_proper_type here - it would eagerly expand the operator.
+    return isinstance(ret_type, TypeOperatorType) and ret_type.type.name == "UpdateClass"
+
+
+def _update_class_func_type(node: object) -> CallableType | None:
+    """Extract the CallableType of a (possibly decorated) function definition."""
+    if isinstance(node, Decorator):
+        node = node.func
+    if isinstance(node, FuncDef) and isinstance(node.type, CallableType):
+        return node.type
+    return None
+
+
+def _class_has_pending_update_class(info: TypeInfo) -> bool:
+    """Whether `info` is (or will be) transformed by an UpdateClass effect.
+
+    Mirrors the detection in semanal_main._apply_update_class_effects: a class
+    is a target of UpdateClass if a class decorator returns UpdateClass, or if
+    an __init_subclass__ in one of its base classes returns UpdateClass.
+
+    Used together with typelevel_ctx._defer_class_schema to hold off reading a
+    class's member schema until the transformation has actually been applied.
+    """
+    for decorator in info.defn.decorators:
+        if isinstance(decorator, RefExpr) and decorator.node is not None:
+            if _returns_update_class(_update_class_func_type(decorator.node)):
+                return True
+    for base in info.mro[1:]:
+        sym = base.names.get("__init_subclass__")
+        if sym is not None and _returns_update_class(_update_class_func_type(sym.node)):
+            return True
+    return False
+
+
 def _get_members_dict(
     target_arg: Type, *, evaluator: TypeLevelEvaluator, attrs_only: bool
 ) -> dict[str, Type]:
@@ -1066,6 +1133,12 @@ def _get_members_dict(
 
     if not isinstance(target, Instance):
         return {}
+
+    if typelevel_ctx._defer_class_schema and _class_has_pending_update_class(target.type):
+        # This class will be transformed by an UpdateClass effect that has not
+        # been applied yet. Stay unevaluated so we retry once the schema is
+        # final, rather than reading the stale pre-transformation schema.
+        raise EvaluationStuck
 
     members: dict[str, Type] = {}
 
